@@ -1,0 +1,125 @@
+import '../styles/global.css'
+
+import Head from 'next/head'
+import { useRouter } from 'next/router'
+import { useEffect } from 'react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+
+import { Analytics } from '@vercel/analytics/react'
+
+import GoogleAnalytics from '../components/GoogleAnalytics'
+import { AdsProvider } from '../context/AdsContext'
+// import { AuthContextProvider } from '../context/AuthContext' // Deprecated
+import { useAuthStore } from '../features/auth'
+import { CastProvider } from '../context/CastContext'
+import { FirebaseCastProvider } from '../context/FirebaseCastContext'
+import { YouTubeCastProvider } from '../context/YouTubeCastContext'
+import { ToastProvider } from '../context/ToastContext'
+
+// Create a client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: Infinity,
+    },
+  },
+});
+
+function App({ Component, pageProps }) {
+  const router = useRouter();
+
+  // Monitor page should NOT have Google Cast (it's a receiver, not a sender)
+  // Monitor page should NOT have Google Cast (it's a receiver, not a sender)
+  const isMonitorPage = router.pathname === '/monitor';
+
+  // Initialize Auth Store (Optimistic)
+  const initializeAuth = useAuthStore((state) => state.initialize);
+  useEffect(() => {
+    const unsub = initializeAuth();
+    return () => unsub();
+  }, [initializeAuth]);
+
+  return (
+    // <AuthContextProvider> replaced by Zustand Store
+    <ToastProvider>
+      <>
+        <Head>
+          <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0, maximum-scale=1.0,user-scalable=0"
+          />
+          <title>YouOke - คาราโอเกะออนไลน์บน YouTube</title>
+          <meta name="title" content="YouOke - คาราโอเกะออนไลน์บน YouTube" />
+          <meta
+            name="description"
+            content="คาราโอเกะออนไลน์ฟรี ไม่ต้องติดตั้ง ทำงานโดยตรงในเบราว์เซอร์ ใช้ได้กับอุปกรณ์หลากหลาย ฐานข้อมูลเพลงจาก Youtube ครบถ้วนและมีคุณภาพสูง "
+          />
+          <meta property="og:type" content="website" />
+          <meta property="og:url" content="https://play.okeforyou.com/" />
+          <meta
+            property="og:title"
+            content="YouOke - คาราโอเกะออนไลน์บน YouTube"
+          />
+          <meta
+            property="og:description"
+            content="คาราโอเกะออนไลน์ฟรี ไม่ต้องติดตั้ง ทำงานโดยตรงในเบราว์เซอร์ ใช้ได้กับอุปกรณ์หลากหลาย ฐานข้อมูลเพลงจาก Youtube ครบถ้วนและมีคุณภาพสูง 
+          "
+          />
+          <meta property="og:image" content="/assets/og-image.png" />
+          <meta property="twitter:card" content="summary_large_image" />
+          <meta
+            property="twitter:url"
+            content="https://play.okeforyou.com/"
+          />
+          <meta
+            property="twitter:title"
+            content="YouOke - คาราโอเกะออนไลน์บน YouTube"
+          />
+          <meta
+            property="twitter:description"
+            content="คาราโอเกะออนไลน์ฟรี ไม่ต้องติดตั้ง ทำงานโดยตรงในเบราว์เซอร์ ใช้ได้กับอุปกรณ์หลากหลาย ฐานข้อมูลเพลงจาก Youtube ครบถ้วนและมีคุณภาพสูง 
+          "
+          />
+          <meta property="twitter:image" content="/assets/og-image.png" />
+          <link rel="icon" href="/favicon.ico" sizes="any" />
+          <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+          <link rel="manifest" href="/manifest.json" />
+          <meta name="apple-mobile-web-app-capable" content="yes"></meta>
+          <meta name="theme-color" content="#ef4444" />
+          <meta name="robots" content="all" />
+        </Head>
+        {process.env.NODE_ENV !== "production" ? null : (
+          <>
+            <GoogleAnalytics
+              ga_id={process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS}
+            />
+          </>
+        )}
+        <QueryClientProvider client={queryClient}>
+          {isMonitorPage ? (
+            // Monitor page: No Cast providers (has its own Firebase logic)
+            <AdsProvider>
+              <Component {...pageProps} />
+            </AdsProvider>
+          ) : (
+            // Other pages: Full Cast stack
+            <CastProvider>
+              <FirebaseCastProvider>
+                <YouTubeCastProvider>
+                  <AdsProvider>
+                    <Component {...pageProps} />
+                  </AdsProvider>
+                </YouTubeCastProvider>
+              </FirebaseCastProvider>
+            </CastProvider>
+          )}
+          {/* <ReactQueryDevtools /> */}
+        </QueryClientProvider>
+        <Analytics />
+      </>
+    </ToastProvider>
+
+  );
+}
+
+export default App;

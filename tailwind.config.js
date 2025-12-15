@@ -1,12 +1,27 @@
 module.exports = {
   darkMode: "class",
   content: [
-    "./pages/**/*.{js,ts,jsx,tsx}",
-    "./components/**/*.{js,ts,jsx,tsx}",
+    "./src/**/*.{js,ts,jsx,tsx}",
   ],
+  theme: {
+    extend: {
+      colors: {
+        primary: "rgb(var(--color-primary) / <alpha-value>)",
+        secondary: "rgb(var(--color-secondary) / <alpha-value>)",
+        base: "rgb(var(--color-bg-base) / <alpha-value>)",
+        muted: "rgb(var(--color-bg-muted) / <alpha-value>)",
+        "text-base": "rgb(var(--color-text-base) / <alpha-value>)",
+        "text-muted": "rgb(var(--color-text-muted) / <alpha-value>)",
+        border: "rgb(var(--color-border) / <alpha-value>)",
+      },
+      fontFamily: {
+        sans: ['"IBM Plex Sans Thai Looped"', 'sans-serif'],
+      },
+    },
+  },
   plugins: [
     require("@tailwindcss/aspect-ratio"),
-    require("@tailwindcss/line-clamp"),
+
     require("tailwind-scrollbar")({ nocompatible: true }),
     require("daisyui"),
   ],
