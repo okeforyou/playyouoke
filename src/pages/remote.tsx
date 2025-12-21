@@ -59,23 +59,42 @@ export default function RemotePage() {
     }, [roomCode]);
 
     const sendCommand = async (type: string, payload: any = {}) => {
-        if (!roomCode || !auth.currentUser) return;
+        if (!roomCode) {
+            alert('Error: Missing Room Code');
+            return;
+        }
+        if (!auth.currentUser) {
+            alert('Error: Not Authenticated');
+            return;
+        }
 
         const dbURL = realtimeDb.app.options.databaseURL;
-        const token = await auth.currentUser.getIdToken();
-        const cmdId = Date.now().toString(); // Simple ID
+        // Debug URL
+        // console.log('DB URL:', dbURL); 
 
-        const commandEnvelope = {
-            command: { type, payload },
-            status: 'pending',
-            timestamp: Date.now(),
-            senderId: auth.currentUser.uid
-        };
+        try {
+            const token = await auth.currentUser.getIdToken();
+            const cmdId = Date.now().toString();
 
-        fetch(`${dbURL}/antigravity_rooms/${roomCode}/commands/${cmdId}.json?auth=${token}`, {
-            method: 'PUT',
-            body: JSON.stringify(commandEnvelope)
-        });
+            const commandEnvelope = {
+                command: { type, payload },
+                status: 'pending',
+                timestamp: Date.now(),
+                senderId: auth.currentUser.uid
+            };
+
+            const res = await fetch(`${dbURL}/antigravity_rooms/${roomCode}/commands/${cmdId}.json?auth=${token}`, {
+                method: 'PUT',
+                body: JSON.stringify(commandEnvelope)
+            });
+
+            if (!res.ok) {
+                const text = await res.text();
+                alert(`Command Failed: ${res.status} ${res.statusText}\n${text}`);
+            }
+        } catch (e: any) {
+            alert(`Network Error: ${e.message}`);
+        }
     };
 
     // Search Logic

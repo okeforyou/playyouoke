@@ -22,8 +22,8 @@ const firebaseConfig = {
 
   // IMPORTANT: Must include region in databaseURL (asia-southeast1)
   // Fallback URL without region will cause "Maximum call stack size exceeded" error
-  // See: FIREBASE-CAST-TROUBLESHOOTING.md for details
-  databaseURL: databaseURL,
+  // For playokeforyou-dev, let's explicit:
+  databaseURL: databaseURL || "https://playokeforyou-dev-default-rtdb.asia-southeast1.firebasedatabase.app",
 };
 
 // Initialize Firebase only if config is valid
