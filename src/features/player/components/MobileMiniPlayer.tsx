@@ -17,8 +17,14 @@ export const MobileMiniPlayer = ({ onExpandQueue }: { onExpandQueue: () => void 
         }
     };
 
+    const [mounted, setMounted] = React.useState(false);
+
+    React.useEffect(() => {
+        setMounted(true);
+    }, []);
+
     // If no track is loaded, don't show (or show empty state)
-    if (!currentSource) return null;
+    if (!mounted || !currentSource) return null;
 
     return (
         <div className="lg:hidden h-16 bg-muted border-t border-border flex items-center px-4 justify-between shrink-0 sticky bottom-0 z-30 shadow-2xl">

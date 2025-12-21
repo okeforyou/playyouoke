@@ -30,7 +30,8 @@ export const SidebarPlayer = () => {
     const onStateChange = (event: any) => {
         // 0 = Ended, 1 = Playing, 2 = Paused
         if (event.data === 0) {
-            // Handle next track logic here if needed
+            console.log("🎬 Video ended, playing next...");
+            usePlayerStore.getState().playNext();
         }
     };
 
