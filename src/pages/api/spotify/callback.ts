@@ -4,9 +4,9 @@ import querystring from 'querystring'
 import { storeTokensInMemory } from '../../../services/spotify'
 
 import type { NextApiRequest, NextApiResponse } from "next";
-const clientId = process.env.SPOTIFY_CLIENT_ID!;
-const clientSecret = process.env.SPOTIFY_CLIENT_SECRET!;
-const redirectUri = process.env.SPOTIFY_REDIRECT_URI!;
+const clientId = process.env.SPOTIFY_CLIENT_ID || "be495e578f89486e9d3c8ca7be1b1e27";
+const clientSecret = process.env.SPOTIFY_CLIENT_SECRET || "c880a42058e2464bbd6f38674cfc59cd";
+const redirectUri = "https://playyouoke.vercel.app/api/spotify/callback";
 
 export default async function handler(
   req: NextApiRequest,
