@@ -15,15 +15,13 @@ const databaseURL = rawDatabaseURL.replace(/\/$/, '');  // Remove trailing slash
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_PUBLIC_API_KEY || 'dummy-api-key',
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || 'dummy.firebaseapp.com',
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'dummy-project',
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || 'dummy.appspot.com',
-
-  // IMPORTANT: Must include region in databaseURL (asia-southeast1)
-  // Fallback URL without region will cause "Maximum call stack size exceeded" error
-  // See: FIREBASE-CAST-TROUBLESHOOTING.md for details
-  databaseURL: databaseURL,
+  apiKey: "AIzaSyBBIHI9VCi3OEgP5mxWotuAJYqJ46MGZgw",
+  authDomain: "playokeforyou-dev.firebaseapp.com",
+  databaseURL: "https://playokeforyou-dev-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "playokeforyou-dev",
+  storageBucket: "playokeforyou-dev.firebasestorage.app",
+  messagingSenderId: "513774834580",
+  appId: "1:513774834580:web:00c192b705e7c76abe3581"
 };
 
 // Initialize Firebase only if config is valid

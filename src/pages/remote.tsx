@@ -59,18 +59,9 @@ export default function RemotePage() {
     }, [roomCode]);
 
     const sendCommand = async (type: string, payload: any = {}) => {
-        if (!roomCode) {
-            alert('Error: Missing Room Code');
-            return;
-        }
-        if (!auth.currentUser) {
-            alert('Error: Not Authenticated');
-            return;
-        }
+        if (!roomCode || !auth.currentUser) return;
 
         const dbURL = realtimeDb.app.options.databaseURL;
-        // Debug URL
-        // console.log('DB URL:', dbURL); 
 
         try {
             const token = await auth.currentUser.getIdToken();
@@ -83,17 +74,12 @@ export default function RemotePage() {
                 senderId: auth.currentUser.uid
             };
 
-            const res = await fetch(`${dbURL}/antigravity_rooms/${roomCode}/commands/${cmdId}.json?auth=${token}`, {
+            await fetch(`${dbURL}/antigravity_rooms/${roomCode}/commands/${cmdId}.json?auth=${token}`, {
                 method: 'PUT',
                 body: JSON.stringify(commandEnvelope)
             });
-
-            if (!res.ok) {
-                const text = await res.text();
-                alert(`Command Failed: ${res.status} ${res.statusText}\n${text}`);
-            }
-        } catch (e: any) {
-            alert(`Network Error: ${e.message}`);
+        } catch (e) {
+            console.error(e);
         }
     };
 
