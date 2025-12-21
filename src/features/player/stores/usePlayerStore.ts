@@ -115,7 +115,7 @@ export const usePlayerStore = create<PlayerStore>()(
             storage: createJSONStorage(() => localStorage),
             partialize: (state) => ({
                 volume: state.volume,
-                queue: state.queue,
+                // queue: state.queue, // REMOVED: Do not persist queue across sessions
                 // Don't persist isPlaying or current playback state to avoid auto-play on reload
             }),
         }
