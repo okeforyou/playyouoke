@@ -118,13 +118,19 @@ export default function MainLayout({ children }: MainLayoutProps) {
                                                     Let's import it at top level or assume dynamic.
                                                     Actually, I should add the import.
                                                   */}
-                                                <img
-                                                    src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(
-                                                        `${typeof window !== 'undefined' ? window.location.origin : ''}/remote?room=${roomCode}`
-                                                    )}`}
-                                                    alt="QR Code"
-                                                    className="w-full h-auto"
-                                                />
+                                                {roomCode ? (
+                                                    <img
+                                                        src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(
+                                                            `${typeof window !== 'undefined' ? window.location.origin : ''}/remote?room=${roomCode}`
+                                                        )}`}
+                                                        alt="QR Code"
+                                                        className="w-full h-auto"
+                                                    />
+                                                ) : (
+                                                    <div className="w-[150px] h-[150px] flex items-center justify-center bg-gray-100 text-gray-400 text-xs">
+                                                        Generating...
+                                                    </div>
+                                                )}
                                             </div>
                                             <div className="text-2xl font-mono font-bold tracking-widest text-primary mb-1">
                                                 {roomCode}

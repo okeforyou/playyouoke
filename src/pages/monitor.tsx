@@ -72,13 +72,17 @@ export default function MonitorPage() {
           <h1 className="text-5xl font-bold font-mono tracking-wider mb-6 text-white">{roomCode || '....'}</h1>
 
           <div className="bg-white p-3 rounded-xl inline-block shadow-lg">
-            <img
-              src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(
-                `${typeof window !== 'undefined' ? window.location.origin : ''}/remote?room=${roomCode}`
-              )}`}
-              alt="Scan to Join"
-              className="w-48 h-48"
-            />
+            {roomCode ? (
+              <img
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(
+                  `${typeof window !== 'undefined' ? window.location.origin : ''}/remote?room=${roomCode}`
+                )}`}
+                alt="Scan to Join"
+                className="w-48 h-48"
+              />
+            ) : (
+              <div className="w-48 h-48 flex items-center justify-center text-gray-400 text-xs">Loading...</div>
+            )}
           </div>
           <p className="text-sm text-gray-400 mt-4">Scan to Control & Add Songs</p>
         </div>
