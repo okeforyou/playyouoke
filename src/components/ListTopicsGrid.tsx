@@ -1,142 +1,99 @@
-import { Fragment, useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { useLocalStorageValue } from "@react-hookz/web";
-import { Squares2X2Icon, ListBulletIcon } from "@heroicons/react/24/outline";
-
+import { Fragment, useState } from "react";
+import axios from "axios";
+import { PlayIcon } from "@heroicons/react/24/solid";
 import { useKaraokeState } from "../hooks/karaoke";
-import { getHitSingles, getSkeletonItems } from "../utils/api";
-import JooxError from "./JooxError";
-import TopicHorizontalCard from "./TopicHorizontalCard";
-import TopicGridCard from "./TopicGridCard";
+import { YOUTUBE_GENRES } from "../data/genres";
+import { usePlayerStore } from "../features/player/stores/usePlayerStore";
+import Alert from "./Alert"; // Assuming Alert is available nearby
+
+// Helper to fetch Invidious Playlist
+const fetchInvidiousPlaylist = async (playlistId: string) => {
+  // Try multiple instances if possible, but start with user config
+  const baseUrl = process.env.NEXT_PUBLIC_INVIDIOUS_URL?.replace(/\/$/, "") || "https://invidious.privacyredirect.com";
+  const res = await axios.get(`${baseUrl}/api/v1/playlists/${playlistId}`);
+  return res.data.videos;
+};
 
 export default function ListTopicsGrid({ showTab = true }) {
-  const { data, isLoading } = useQuery({
-    queryKey: ["getHitSingles"],
-    queryFn: getHitSingles,
-    retry: false,
-    refetchInterval: 0,
-  });
-
-  const { singles: topics } = data || {};
-  const [isError, setIsError] = useState(false);
-
-  useEffect(() => {
-    if (data) {
-      setIsError(data.singles.length === 0);
-    }
-  }, [data]);
-
   const { setActiveIndex, setSearchTerm } = useKaraokeState();
+  const { setPlaylist } = useKaraokeState();
+  const addToQueue = usePlayerStore(state => state.addToQueue);
+  const play = usePlayerStore(state => state.play);
 
-  // View mode: 'list' or 'grid'
-  const { value: viewMode, set: setViewMode } = useLocalStorageValue<"list" | "grid">(
-    "hits-view-mode",
-    { defaultValue: "list" }
-  );
+  const [isLoading, setIsLoading] = useState(false);
 
-  return isError ? (
-    <JooxError />
-  ) : (
-    <>
-      <div className="col-span-full  bg-transparent pt-2">
-        {showTab && (
-          <nav className="tabs tabs-boxed flex justify-center  bg-transparent">
-            <button
-              type="button"
-              className="tab"
-              onClick={() => {
-                setActiveIndex(1);
-              }}
-            >
-              ศิลปินยอดฮิต
-            </button>
-            <button type="button" className="tab tab-active">
-              มาแรง
-            </button>
-          </nav>
-        )}
+  const handleGenreClick = async (playlistId: string, genreName: string) => {
+    setIsLoading(true);
+    try {
+      const videos = await fetchInvidiousPlaylist(playlistId);
+
+      // Convert to QueueItem format
+      const queueItems = videos.map((v: any) => ({
+        videoId: v.videoId,
+        title: v.title,
+        author: v.author,
+        thumbnail: v.videoThumbnails?.[0]?.url || ""
+      }));
+
+      if (queueItems.length > 0) {
+        // Add all to queue? Or replace queue?
+        // Usually for a "Station", we replace queue or add to queue.
+        // Let's replace queue for "Play Playlist" experience, or add.
+        // But simpler: Add first one and play, add rest to queue.
+        // For now, let's use the playerService-like logic:
+        // But we are in a component. 
+        // We'll just call setPlaylist which usually handles this in the old legacy code, 
+        // OR better: use store directly.
+
+        // Queue Replacement Logic (Simulating "Play Playlist")
+        usePlayerStore.getState().clearQueue();
+        queueItems.forEach(item => usePlayerStore.getState().addToQueue(item));
+        usePlayerStore.getState().playNext(); // Start playing first item (index 0)
+
+      }
+    } catch (e) {
+      console.error("Failed to load genre playlist", e);
+      alert("ไม่สามารถโหลดรายการเพลงได้ (YouTube Error)");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="col-span-full pt-4 px-2">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-bold text-gray-800">เลือกแนวเพลงที่คุณชอบ 🎵</h2>
       </div>
-      <div className="col-span-full bg-transparent pl-2 pr-2 flex justify-between items-center">
-        <h2 className="text-lg font-semibold text-gray-900">เพลงใหม่มาแรง</h2>
-        {/* Grid/List Toggle */}
-        <div className="flex gap-1">
-          <button
-            onClick={() => setViewMode("grid")}
-            title="Grid View"
-            className={`p-2 rounded transition-all ${viewMode === "grid"
-              ? "text-gray-900 opacity-100"
-              : "text-gray-500 opacity-75 hover:opacity-90"
-              }`}
-          >
-            <Squares2X2Icon className="w-5 h-5" />
-          </button>
-          <button
-            onClick={() => setViewMode("list")}
-            title="List View"
-            className={`p-2 rounded transition-all ${viewMode === "list"
-              ? "text-gray-900 opacity-100"
-              : "text-gray-500 opacity-75 hover:opacity-90"
-              }`}
-          >
-            <ListBulletIcon className="w-5 h-5" />
-          </button>
-        </div>
-      </div>
-      {/* List View */}
-      {viewMode === "list" && (
-        <div className="relative flex flex-col gap-2 col-span-full pt-2">
-          {isLoading && (
-            <>
-              <div className="absolute inset-0 bg-gradient-to-t from-base-300 z-10" />
-              {getSkeletonItems(8).map((s) => (
-                <div
-                  key={s}
-                  className="bg-gray-300 animate-pulse w-full h-16 rounded"
-                />
-              ))}
-            </>
-          )}
-          {topics?.map((topic, key) => (
-            <Fragment key={key}>
-              <TopicHorizontalCard
-                topic={topic}
-                onClick={() => {
-                  setSearchTerm(topic.title + " " + topic.artist_name);
-                  setActiveIndex(0);
-                }}
-              />
-            </Fragment>
-          ))}
+
+      {isLoading && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
+          <span className="loading loading-spinner loading-lg text-primary"></span>
         </div>
       )}
 
-      {/* Grid View */}
-      {viewMode === "grid" && (
-        <div className="relative grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-5 pt-2 gap-2 col-span-full auto-rows-fr">
-          {isLoading && (
-            <>
-              <div className="absolute inset-0 bg-gradient-to-t from-base-300 z-10" />
-              {getSkeletonItems(16).map((s) => (
-                <div
-                  key={s}
-                  className="card bg-gray-300 animate-pulse w-full aspect-video"
-                />
-              ))}
-            </>
-          )}
-          {topics?.map((topic, key) => (
-            <Fragment key={key}>
-              <TopicGridCard
-                topic={topic}
-                onClick={() => {
-                  setSearchTerm(topic.title + " " + topic.artist_name);
-                  setActiveIndex(0);
-                }}
-              />
-            </Fragment>
-          ))}
-        </div>
-      )}
-    </>
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+        {YOUTUBE_GENRES.map((genre) => (
+          <div
+            key={genre.id}
+            onClick={() => handleGenreClick(genre.id, genre.title)}
+            className={`
+                            relative h-32 rounded-xl cursor-pointer overflow-hidden shadow-lg hover:shadow-xl transition-all hover:scale-105 group
+                            bg-gradient-to-br ${genre.color} to-black
+                        `}
+          >
+            <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors" />
+
+            <div className="absolute top-3 left-3">
+              <h3 className="text-white font-bold text-lg leading-tight">{genre.title}</h3>
+              <p className="text-white/80 text-xs mt-1">{genre.description}</p>
+            </div>
+
+            {/* Decorative Icon */}
+            <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-white/10 rounded-full blur-xl transform rotate-12" />
+            <PlayIcon className="absolute bottom-3 right-3 w-8 h-8 text-white opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300" />
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
