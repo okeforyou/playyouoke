@@ -27,7 +27,7 @@ export default async function handler(
       }
     );
 
-    const tracks = playlistResponse.data.items;
+    const tracks = playlistResponse.data?.items || [];
 
     const artists = {
       status: "success",

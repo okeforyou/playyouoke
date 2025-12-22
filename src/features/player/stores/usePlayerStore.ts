@@ -111,7 +111,7 @@ export const usePlayerStore = create<PlayerStore>()(
             clearQueue: () => set({ queue: [], currentVideo: null, currentSource: null, isPlaying: false, currentIndex: 0 })
         }),
         {
-            name: 'youoke-player-storage',
+            name: 'youoke-player-storage-v2',
             storage: createJSONStorage(() => localStorage),
             partialize: (state) => ({
                 volume: state.volume,
