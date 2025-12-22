@@ -25,13 +25,11 @@ export default function ListTopicsGrid({ showTab = true }) {
   const handleGenreClick = async (query: string, genreName: string) => {
     setIsLoading(true);
     try {
-      // 1. Search for the best playlist matching the query
-      const baseUrl = process.env.NEXT_PUBLIC_INVIDIOUS_URL?.replace(/\/$/, "") || "https://invidious.privacyredirect.com";
+      // 1. Search using our new local proxy (Bypasses CORS)
+      console.log(`🔍 Searching playlist for query: ${query}`);
 
-      console.log(`🔍 Searching playlist for: ${query}`);
-      // Note: type=playlist is key here
-      const searchRes = await axios.get(`${baseUrl}/api/v1/search`, {
-        params: { q: query, type: 'playlist', sort: 'relevance' }
+      const searchRes = await axios.get(`/api/search/playlists`, {
+        params: { q: query }
       });
 
       const playlists = searchRes.data;
@@ -43,15 +41,16 @@ export default function ListTopicsGrid({ showTab = true }) {
       const topPlaylist = playlists[0];
       console.log(`✅ Found playlist: ${topPlaylist.title} (${topPlaylist.playlistId})`);
 
-      // 2. Fetch the videos from that playlist
-      const videos = await fetchInvidiousPlaylist(topPlaylist.playlistId);
+      // 2. Fetch the videos using our new local proxy
+      const playlistRes = await axios.get(`/api/playlist/${topPlaylist.playlistId}`);
+      const videos = playlistRes.data.videos;
 
       // Convert to QueueItem format
       const queueItems = videos.map((v: any) => ({
         videoId: v.videoId,
         title: v.title,
         author: v.author,
-        thumbnail: v.videoThumbnails?.[0]?.url || ""
+        thumbnail: v.videoThumbnails?.[0]?.url || `https://i.ytimg.com/vi/${v.videoId}/mqdefault.jpg`
       }));
 
       if (queueItems.length > 0) {
@@ -67,7 +66,7 @@ export default function ListTopicsGrid({ showTab = true }) {
       }
     } catch (e) {
       console.error("Failed to load genre playlist", e);
-      alert("ไม่สามารถค้นหาเพลย์ลิสต์ได้ในขณะนี้ (Search Error)");
+      alert("ไม่สามารถค้นหาเพลย์ลิสต์ได้ในขณะนี้ (API Error)");
     } finally {
       setIsLoading(false);
     }
