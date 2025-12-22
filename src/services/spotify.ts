@@ -38,9 +38,9 @@ const getAccessToken = async () => {
     tokenExpiry = Date.now() + response.data.expires_in * 1000;
 
     return accessToken;
-  } catch (error) {
-    console.error("Error refreshing access token:", error);
-    throw error;
+  } catch (error: any) {
+    console.error("Error refreshing access token:", error.response?.data || error.message);
+    throw new Error(`Failed to refresh token: ${JSON.stringify(error.response?.data || error.message)}`);
   }
 };
 
