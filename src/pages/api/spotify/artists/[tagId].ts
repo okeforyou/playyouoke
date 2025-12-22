@@ -32,16 +32,17 @@ export default async function handler(
     const artists = {
       status: "success",
       artist: tracks
-        .filter((a) => !!a.track)
-        .map((a) => ({
-          name: a.track?.name,
-          imageUrl: a.track?.album?.images[0].url,
+        .filter((a: any) => !!a.track)
+        .map((a: any) => ({
+          name: a.track.name || "Unknown Track",
+          // Safe guard against missing album or images
+          imageUrl: a.track.album?.images?.[0]?.url || "",
         })),
     };
 
     res.status(200).json(artists);
-  } catch (error) {
-    // console.log(error);
-    res.status(500).json(error);
+  } catch (error: any) {
+    console.error(`❌ Error fetching playlist ${req.query.tagId}:`, error.response?.data || error.message);
+    res.status(500).json({ error: error.message, details: error.response?.data });
   }
 }
