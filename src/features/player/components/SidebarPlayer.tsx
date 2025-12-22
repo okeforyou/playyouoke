@@ -41,7 +41,7 @@ export const SidebarPlayer = () => {
             <div className="absolute inset-0 z-0 pointer-events-none">
                 {/* Pointer events none to prevent stealing clicks, unless we want interaction */}
                 <YouTube
-                    videoId={currentSource || "dQw4w9WgXcQ"} // Default placeholder
+                    videoId={currentSource || ""} // No placeholder
                     opts={opts}
                     onReady={onReady}
                     onStateChange={onStateChange}

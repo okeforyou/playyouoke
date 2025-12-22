@@ -2,7 +2,7 @@ import { useLocalStorageValue } from "@react-hookz/web";
 
 export function useListSingerState() {
   const { value: tagId, set: setTagId } = useLocalStorageValue("tagId", {
-    defaultValue: "37i9dQZEVXbMnz8KIWsvf9", // Top 50 - Thailand (2025)
+    defaultValue: "3oLUwlQTdzsCkTK72wCbv9", // Top 50 - Thailand (Working)
   });
 
   const { value: genreText, set: setGenreText } = useLocalStorageValue(
