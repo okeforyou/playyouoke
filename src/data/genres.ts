@@ -1,47 +1,67 @@
 export interface GenreItem {
-    id: string; // YouTube Playlist ID
+    query: string; // Dynamic Search Query
     title: string;
     description?: string;
     thumbnail: string;
-    color: string; // Gradient start color
+    color: string;
 }
 
+// Dynamic Search Queries (Always Fresh)
 export const YOUTUBE_GENRES: GenreItem[] = [
     {
-        id: "PLMinUUjH7Zq-G_F26J_Xj75fJ8Z02yX8",
+        query: "เพลงฮิต GMM Grammy ล่าสุด 2025",
         title: "GMM Grammy",
-        description: "รวมเพลงฮิต GMM Grammy",
+        description: "เพลงฮิตแกรมมี่ อัปเดตล่าสุด",
         thumbnail: "",
         color: "from-red-600"
     },
     {
-        id: "PL4306387870933758",
-        title: "Genie Rock",
-        description: "ร็อคฮิตจาก Genie Records",
+        query: "เพลงไทยยอดนิยม 2025 Top 100",
+        title: "Thailand Top 100",
+        description: "เพลงไทยชาร์ตท็อป ยอดวิวสูง",
         thumbnail: "",
-        color: "from-blue-700"
+        color: "from-blue-600"
     },
     {
-        id: "PL1C7B2721F2F6C239", // Rsiam
-        title: "Rsiam ลูกทุ่ง",
-        description: "รวมฮิตลูกทุ่งอาร์สยาม",
+        query: "เพลงลูกทุ่งฮิต 100 ล้านวิว ล่าสุด",
+        title: "ลูกทุ่ง 100 ล้านวิว",
+        description: "รวมฮิตลูกทุ่ง ยอดวิวถล่มทลาย",
         thumbnail: "",
         color: "from-green-600"
     },
     {
-        id: "PLA402C82F72851403", // Smallroom
-        title: "Smallroom Indie",
-        description: "อินดี้ฟังสบาย",
+        query: "เพลงแดนซ์ มันๆ 2025 ตื๊ดๆ",
+        title: "สายปาร์ตี้ (Party)",
+        description: "แดนซ์มันส์ๆ เพลงผับ",
+        thumbnail: "",
+        color: "from-purple-600"
+    },
+    {
+        query: "เพลงอินดี้ฟังสบาย ร้านกาแฟ 2025",
+        title: "Indie & Cafe",
+        description: "เพลงฟังสบายๆ ชิลล์ๆ",
         thumbnail: "",
         color: "from-teal-500"
     },
     {
-        id: "PL33359D95679D0877", // Grammy Gold / Lukthung (Wait, this was the placeholder? No, let's use another known ID)
-        // Using 'Grammy Gold Official Playlist' ID: PL226C9... (Guessing ID format is risky).
-        // I'll stick to 4 items for now as they are GUARANTEED valid. 
-        // Better 4 working than 5 with 1 error.
-        id: "PLMinUUjH7Zq-G_F26J_Xj75fJ8Z02yX8", // Duplicate GMM as placeholder for "Hits" but different title? NO.
-        // Removing the 5th item to be safe.
-        id: "", title: "", description: "", thumbnail: "", color: ""
+        query: "เพลงเศร้า อกหัก 2025",
+        title: "เพลงเศร้า (Sad)",
+        description: "เอาใจคนอกหัก",
+        thumbnail: "",
+        color: "from-gray-500"
+    },
+    {
+        query: "เพลงยุค 90 ไทย ฮิต",
+        title: "90's Hits",
+        description: "เพลงฮิตยุค 90-2000",
+        thumbnail: "",
+        color: "from-yellow-500"
+    },
+    {
+        query: "เพลงเพื่อชีวิต ฮิตตลอดกาล",
+        title: "เพื่อชีวิต",
+        description: "ตำนานเพลงเพื่อชีวิต",
+        thumbnail: "",
+        color: "from-orange-700"
     }
-].filter(i => i.id !== "");
+];

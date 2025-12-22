@@ -22,10 +22,29 @@ export default function ListTopicsGrid({ showTab = true }) {
 
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleGenreClick = async (playlistId: string, genreName: string) => {
+  const handleGenreClick = async (query: string, genreName: string) => {
     setIsLoading(true);
     try {
-      const videos = await fetchInvidiousPlaylist(playlistId);
+      // 1. Search for the best playlist matching the query
+      const baseUrl = process.env.NEXT_PUBLIC_INVIDIOUS_URL?.replace(/\/$/, "") || "https://invidious.privacyredirect.com";
+
+      console.log(`🔍 Searching playlist for: ${query}`);
+      // Note: type=playlist is key here
+      const searchRes = await axios.get(`${baseUrl}/api/v1/search`, {
+        params: { q: query, type: 'playlist', sort: 'relevance' }
+      });
+
+      const playlists = searchRes.data;
+      if (!playlists || playlists.length === 0) {
+        throw new Error("No playlists found");
+      }
+
+      // Pick the first one (most relevant)
+      const topPlaylist = playlists[0];
+      console.log(`✅ Found playlist: ${topPlaylist.title} (${topPlaylist.playlistId})`);
+
+      // 2. Fetch the videos from that playlist
+      const videos = await fetchInvidiousPlaylist(topPlaylist.playlistId);
 
       // Convert to QueueItem format
       const queueItems = videos.map((v: any) => ({
@@ -36,24 +55,19 @@ export default function ListTopicsGrid({ showTab = true }) {
       }));
 
       if (queueItems.length > 0) {
-        // Add all to queue? Or replace queue?
-        // Usually for a "Station", we replace queue or add to queue.
-        // Let's replace queue for "Play Playlist" experience, or add.
-        // But simpler: Add first one and play, add rest to queue.
-        // For now, let's use the playerService-like logic:
-        // But we are in a component. 
-        // We'll just call setPlaylist which usually handles this in the old legacy code, 
-        // OR better: use store directly.
+        // Smart Shuffle: If it's a generic genre, maybe shuffle? 
+        // For now, Play in order is fine.
 
-        // Queue Replacement Logic (Simulating "Play Playlist")
         usePlayerStore.getState().clearQueue();
         queueItems.forEach(item => usePlayerStore.getState().addToQueue(item));
-        usePlayerStore.getState().playNext(); // Start playing first item (index 0)
+        usePlayerStore.getState().playNext();
 
+        // Feedback to user
+        // alert(`Playing: ${topPlaylist.title}`); // Optional
       }
     } catch (e) {
       console.error("Failed to load genre playlist", e);
-      alert("ไม่สามารถโหลดรายการเพลงได้ (YouTube Error)");
+      alert("ไม่สามารถค้นหาเพลย์ลิสต์ได้ในขณะนี้ (Search Error)");
     } finally {
       setIsLoading(false);
     }
@@ -62,26 +76,28 @@ export default function ListTopicsGrid({ showTab = true }) {
   return (
     <div className="col-span-full pt-4 px-2">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold text-gray-800">เลือกแนวเพลงที่คุณชอบ 🎵</h2>
+        <h2 className="text-xl font-bold text-gray-800">เลือกแนวเพลง (อัปเดตใหม่ล่าสุด) 🎵✨</h2>
       </div>
 
       {isLoading && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
-          <span className="loading loading-spinner loading-lg text-primary"></span>
+          <div className="flex flex-col items-center gap-4">
+            <span className="loading loading-spinner loading-lg text-primary"></span>
+            <span className="text-white font-medium">กำลังค้นหาเพลย์ลิสต์ใหม่ล่าสุด...</span>
+          </div>
         </div>
       )}
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
         {YOUTUBE_GENRES.map((genre) => (
           <div
-            key={genre.id}
-            onClick={() => handleGenreClick(genre.id, genre.title)}
+            key={genre.query}
+            onClick={() => handleGenreClick(genre.query, genre.title)}
             className={`
                             relative h-32 rounded-xl cursor-pointer overflow-hidden shadow-lg hover:shadow-xl transition-all hover:scale-105 group
                             bg-gradient-to-br ${genre.color} to-black
                         `}
-          >
-            <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors" />
+          >    <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors" />
 
             <div className="absolute top-3 left-3">
               <h3 className="text-white font-bold text-lg leading-tight">{genre.title}</h3>
