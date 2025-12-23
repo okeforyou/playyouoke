@@ -11,6 +11,19 @@
 // MUSIC EXPLORE SCRAPING (Dynamic from YouTube Music)
 // ============================================================================
 
+export interface YouTubeScraperResult {
+  videoId: string;
+  title: string;
+  author?: string;
+  authorId?: string;
+  videoThumbnails: Array<{
+    quality: string;
+    url: string;
+    width: number;
+    height: number;
+  }>;
+}
+
 export interface MusicSection {
   title: string;
   items: YouTubePlaylistResult[];
