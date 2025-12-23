@@ -67,11 +67,23 @@ export const getHitSingles = async () => {
 export const searchPlaylists = async (
   query: string
 ): Promise<SearchPlaylists> => {
-  const response = await axios.get<SearchPlaylists>(
-    "/api/spotify/search-playlist",
+  // Use the new reliable Spotify-backed endpoint
+  const response = await axios.get<any[]>(
+    "/api/search/playlists",
     {
-      params: { query },
+      params: { q: query },
     }
   );
-  return response.data;
+
+  // Map new format to old format expected by ListSingerGrid
+  const artistCategories = response.data.map(item => ({
+    tag_id: item.playlistId,
+    tag_name: item.title,
+    imageUrl: item.thumbnail
+  }));
+
+  return {
+    status: "success",
+    artistCategories
+  };
 };

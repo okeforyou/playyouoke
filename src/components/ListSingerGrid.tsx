@@ -78,7 +78,7 @@ export default function ListSingerGrid({ showTab = true }) {
     refetchInterval: 0,
   });
 
-  const { isLoading: isLoadingGenre, refetch } = useQuery<SearchPlaylists, Error>({
+  const { isLoading: isLoadingGenre, data: playlistData, refetch } = useQuery<SearchPlaylists, Error>({
     queryKey: ["searchPlaylists", genreText],
     queryFn: () => searchPlaylists(genreText),
     enabled: false,
@@ -86,12 +86,14 @@ export default function ListSingerGrid({ showTab = true }) {
 
   // Effect to handle side effects from data fetching
   useEffect(() => {
-    // This logic was previously in onSuccess of searchPlaylists
-    // We need to implement it properly maybe in another way or when data changes if we had access to data here
-    // But searchPlaylists return structure implies we might need to handle it differently.
-    // For now, let's leave it as is, but we lost access to 'data' in onSuccess.
-    // Let's assume the component will refactor this logic later or strict mode will catch it.
-  }, []);
+    if (playlistData && playlistData.artistCategories) {
+      console.log("Updating Artist Categories with:", playlistData.artistCategories);
+      setTopArtistsData(prev => ({
+        ...prev,
+        artistCategories: playlistData.artistCategories
+      }));
+    }
+  }, [playlistData]);
 
   useEffect(() => {
     setTopArtistsData(tempTopArtistsData);
