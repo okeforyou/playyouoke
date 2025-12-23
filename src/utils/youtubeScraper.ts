@@ -107,17 +107,17 @@ function parseVideoResults(ytInitialData: any): YouTubeScraperResult[] {
 
         // Extract title
         const title = videoRenderer.title?.runs?.[0]?.text ||
-                     videoRenderer.title?.simpleText ||
-                     'Unknown Title';
+          videoRenderer.title?.simpleText ||
+          'Unknown Title';
 
         // Extract channel/author info
         const author = videoRenderer.ownerText?.runs?.[0]?.text ||
-                      videoRenderer.shortBylineText?.runs?.[0]?.text ||
-                      'Unknown';
+          videoRenderer.shortBylineText?.runs?.[0]?.text ||
+          'Unknown';
 
         const authorId = videoRenderer.ownerText?.runs?.[0]?.navigationEndpoint?.browseEndpoint?.browseId ||
-                        videoRenderer.shortBylineText?.runs?.[0]?.navigationEndpoint?.browseEndpoint?.browseId ||
-                        '';
+          videoRenderer.shortBylineText?.runs?.[0]?.navigationEndpoint?.browseEndpoint?.browseId ||
+          '';
 
         // Generate thumbnails (YouTube CDN format)
         const videoThumbnails = [
@@ -260,6 +260,9 @@ export async function scrapeYouTubeSearch(
 /**
  * Scrape with retry logic
  */
+/**
+ * Scrape with retry logic
+ */
 export async function scrapeYouTubeSearchWithRetry(
   query: string,
   maxRetries: number = 2,
@@ -283,4 +286,194 @@ export async function scrapeYouTubeSearchWithRetry(
   }
 
   throw lastError || new Error('YouTube scraping failed');
+}
+
+// ============================================================================
+// PLAYLIST SCRAPING SUPPORT (Added for Genre Redesign)
+// ============================================================================
+
+export interface YouTubePlaylistResult {
+  playlistId: string;
+  title: string;
+  thumbnail: string;
+  author: string;
+  videoCount: string;
+}
+
+/**
+ * Scrape YouTube Playlist Search Results
+ * Uses sp=EgIQAw%3D%3D to filter for playlists
+ */
+export async function scrapeYouTubePlaylistSearch(
+  query: string,
+  timeout: number = 10000
+): Promise<YouTubePlaylistResult[]> {
+  const encodedQuery = encodeURIComponent(query);
+  const url = `https://www.youtube.com/results?search_query=${encodedQuery}&sp=EgIQAw%3D%3D`; // Force type=playlist
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': getRandomUserAgent(),
+        'Accept-Language': 'en-US,en;q=0.9,th;q=0.8',
+      },
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) throw new Error(`YouTube returned status ${response.status}`);
+    const html = await response.text();
+    const ytInitialData = extractYtInitialData(html);
+
+    if (!ytInitialData) throw new Error('Could not find ytInitialData');
+
+    const contents = ytInitialData?.contents?.twoColumnSearchResultsRenderer?.primaryContents?.sectionListRenderer?.contents;
+    if (!contents) return [];
+
+    const results: YouTubePlaylistResult[] = [];
+
+    for (const section of contents) {
+      if (!section.itemSectionRenderer?.contents) continue;
+      for (const item of section.itemSectionRenderer.contents) {
+        const renderer = item.playlistRenderer;
+        if (!renderer) continue;
+
+        const playlistId = renderer.playlistId;
+        const title = renderer.title.simpleText || renderer.title.runs?.[0]?.text || "Unknown";
+        const author = renderer.shortBylineText?.runs?.[0]?.text || "Unknown";
+        const videoCount = renderer.videoCountText?.simpleText || renderer.videoCountText?.runs?.[0]?.text || "0";
+        const thumbnail = renderer.thumbnails?.[0]?.url || "";
+
+        if (playlistId) {
+          results.push({ playlistId, title, author, videoCount, thumbnail });
+        }
+      }
+    }
+
+    console.log(`[YouTube Scraper] Found ${results.length} playlists for query: ${query}`);
+    return results;
+
+  } catch (error: any) {
+    console.error("[YouTube Scraper] Playlist search failed:", error.message);
+    return [];
+  }
+}
+
+export interface YouTubeVideoResult {
+  videoId: string;
+  title: string;
+  author: string;
+  videoThumbnails: Array<{ quality: string; url: string; width: number; height: number; }>;
+}
+
+/**
+ * Scrape Videos from a specific Playlist ID
+ */
+export async function scrapeYouTubePlaylistVideos(
+  playlistId: string,
+  timeout: number = 10000
+): Promise<YouTubeVideoResult[]> {
+  const url = `https://www.youtube.com/playlist?list=${playlistId}`;
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': getRandomUserAgent(),
+        'Accept-Language': 'en-US,en;q=0.9,th;q=0.8',
+      },
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) throw new Error(`YouTube returned status ${response.status}`);
+    const html = await response.text();
+
+    // Playlist pages are different, sometimes ytInitialData is used for valid videos
+    const ytInitialData = extractYtInitialData(html);
+    if (!ytInitialData) throw new Error('Could not find ytInitialData');
+
+    // Traverse for playlistVideoListRenderer
+    // Structure: contents -> twoColumnBrowseResultsRenderer -> tabs -> tabRenderer -> content -> sectionListRenderer -> contents -> itemSectionRenderer -> contents -> playlistVideoListRenderer -> contents
+    // OR: contents -> twoColumnBrowseResultsRenderer -> tabs -> tabRenderer -> content -> sectionListRenderer -> contents -> itemSectionRenderer -> contents -> playlistVideoListRenderer -> contents
+
+    // Simpler traverse helper
+    const findContents = (obj: any): any[] => {
+      if (!obj) return [];
+      if (obj.playlistVideoListRenderer) return obj.playlistVideoListRenderer.contents;
+      // Iterate keys
+      for (const key in obj) {
+        if (typeof obj[key] === 'object') {
+          const res = findContents(obj[key]);
+          if (res.length > 0) return res;
+        }
+      }
+      return [];
+    };
+
+    // Targeted traversal (safer)
+    const tabs = ytInitialData?.contents?.twoColumnBrowseResultsRenderer?.tabs;
+    let videoItems: any[] = [];
+
+    if (tabs) {
+      for (const tab of tabs) {
+        const sectionList = tab?.tabRenderer?.content?.sectionListRenderer?.contents;
+        if (sectionList) {
+          for (const section of sectionList) {
+            const itemSection = section?.itemSectionRenderer?.contents;
+            if (itemSection) {
+              for (const item of itemSection) {
+                if (item.playlistVideoListRenderer?.contents) {
+                  videoItems = item.playlistVideoListRenderer.contents;
+                  break;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    if (videoItems.length === 0) {
+      console.warn("[YouTube Scraper] No videos found via standard traversal, trying deep search");
+      // Fallback: This implementation often changes.
+    }
+
+    const videos: YouTubeVideoResult[] = [];
+
+    for (const item of videoItems) {
+      const renderer = item.playlistVideoRenderer;
+      if (!renderer) continue;
+
+      const videoId = renderer.videoId;
+      const title = renderer.title?.runs?.[0]?.text || renderer.title?.simpleText || "Unknown";
+      const author = renderer.shortBylineText?.runs?.[0]?.text || "Unknown";
+
+      if (videoId) {
+        videos.push({
+          videoId,
+          title,
+          author,
+          videoThumbnails: [
+            { quality: 'maxres', url: `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`, width: 1280, height: 720 },
+            { quality: 'medium', url: `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`, width: 320, height: 180 }
+          ]
+        });
+      }
+    }
+
+    console.log(`[YouTube Scraper] Parsed ${videos.length} videos from playlist ${playlistId}`);
+    return videos;
+
+  } catch (error: any) {
+    console.error("[YouTube Scraper] Playlist fetch failed:", error.message);
+    throw error;
+  }
 }

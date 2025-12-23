@@ -1,13 +1,5 @@
-import axios from "axios";
 import type { NextApiRequest, NextApiResponse } from "next";
-
-// List of Invidious instances to try (Server-side)
-const INVIDIOUS_INSTANCES = [
-    "https://invidious.privacyredirect.com",
-    "https://yewtu.be",
-    "https://inv.nadeko.net",
-    "https://vid.puffyan.us"
-];
+import { scrapeYouTubePlaylistSearch } from "../../../utils/youtubeScraper";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     const { q } = req.query;
@@ -16,40 +8,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(400).json({ error: "Query 'q' is required" });
     }
 
-    // Try instances in order
-    for (const instance of INVIDIOUS_INSTANCES) {
-        try {
-            console.log(`[API] Searching playlists on ${instance} for: ${q}`);
-            const response = await axios.get(`${instance}/api/v1/search`, {
-                params: {
-                    q: q,
-                    type: "playlist",
-                    sort: "relevance"
-                },
-                timeout: 5000 // 5s timeout
-            });
+    try {
+        console.log(`[API] Searching playlists via Direct Scraper for: ${q}`);
+        const results = await scrapeYouTubePlaylistSearch(q as string);
 
-            // Map to consistent format
-            const playlists = response.data
-                .filter((item: any) => item.type === "playlist")
-                .map((item: any) => ({
-                    playlistId: item.playlistId,
-                    title: item.title,
-                    thumbnail: item.playlistThumbnail || "",
-                    author: item.author,
-                    videoCount: item.videoCount
-                }));
-
-            if (playlists.length > 0) {
-                return res.status(200).json(playlists);
-            }
-
-        } catch (error: any) {
-            console.warn(`[API] Add to skip list: ${instance} failed - ${error.message}`);
-            // Continue to next instance
+        if (results.length === 0) {
+            // Fallback: If scraping fails, maybe return error or empty?
+            // In critical user path, we might want to try ONE Invidious instance as fallback?
+            // For now, scraping is more reliable than Invidious public instances.
+            return res.status(200).json([]); // Empty array = "No results"
         }
-    }
 
-    // If all failed
-    return res.status(500).json({ error: "Failed to search playlists on all instances" });
+        return res.status(200).json(results);
+
+    } catch (error: any) {
+        console.error(`[API] Playlist search failed: ${error.message}`);
+        return res.status(500).json({ error: "Failed to search playlists", details: error.message });
+    }
 }
