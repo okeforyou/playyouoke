@@ -7,10 +7,6 @@
  * FREE, UNLIMITED, and MORE STABLE than Invidious!
  */
 
-// ============================================================================
-// MUSIC EXPLORE SCRAPING (Dynamic from YouTube Music)
-// ============================================================================
-
 export interface YouTubeScraperResult {
   videoId: string;
   title: string;
@@ -58,61 +54,92 @@ export async function scrapeMusicExplore(
 
     if (!ytInitialData) throw new Error('Could not find ytInitialData');
 
-    // Traverse tabs -> content -> sectionList -> contents
+    // Traverse tabs -> content
     const tabs = ytInitialData?.contents?.twoColumnBrowseResultsRenderer?.tabs;
     const sections: MusicSection[] = [];
 
     if (tabs) {
       for (const tab of tabs) {
-        const sectionList = tab?.tabRenderer?.content?.sectionListRenderer?.contents;
-        if (sectionList) {
-          for (const section of sectionList) {
-            const shelf = section?.itemSectionRenderer?.contents?.[0]?.shelfRenderer;
-            if (!shelf) continue;
+        // Content can be in sectionListRenderer (Old) or richGridRenderer (New)
+        const content = tab?.tabRenderer?.content;
+        if (!content) continue;
 
-            const title = shelf.title?.runs?.[0]?.text || shelf.title?.simpleText;
-            if (!title) continue;
+        let potentialShelves: any[] = [];
 
-            const items: YouTubePlaylistResult[] = [];
-            const contentItems = shelf.content?.horizontalListRenderer?.items || shelf.content?.expandedShelfContentsRenderer?.items;
+        if (content.sectionListRenderer) {
+          potentialShelves = content.sectionListRenderer.contents;
+        } else if (content.richGridRenderer) {
+          potentialShelves = content.richGridRenderer.contents;
+        }
 
-            if (contentItems) {
-              for (const item of contentItems) {
-                // We look for playlists (gridPlaylistRenderer) or videos/radios
-                // Prioritize Playlists for this feature
-                const renderer = item.gridPlaylistRenderer || item.compactStationRenderer || item.lockupViewModel;
+        for (const section of potentialShelves) {
+          let shelf: any = null;
+          let itemsRaw: any[] = [];
+          let shelfTitle = "";
 
-                if (renderer) {
-                  // Handle different renderer types common in Music/Explore
-                  let playlistId = renderer.playlistId;
-                  let itemTitle = renderer.title?.runs?.[0]?.text || renderer.title?.simpleText;
-                  let thumbnail = renderer.thumbnails?.[0]?.url || renderer.rendererContext?.commandContext?.onTap?.innertubeCommand?.watchEndpoint?.videoId ? `https://i.ytimg.com/vi/${renderer.rendererContext?.commandContext?.onTap?.innertubeCommand?.watchEndpoint?.videoId}/mqdefault.jpg` : "";
-                  const videoCount = renderer.videoCountShortText?.simpleText || "Playlist";
+          // Handle: SectionList -> ItemSection -> Shelf
+          if (section.itemSectionRenderer?.contents?.[0]?.shelfRenderer) {
+            shelf = section.itemSectionRenderer.contents[0].shelfRenderer;
+            shelfTitle = shelf.title?.runs?.[0]?.text || shelf.title?.simpleText;
+            itemsRaw = shelf.content?.horizontalListRenderer?.items || shelf.content?.expandedShelfContentsRenderer?.items || [];
+          }
 
-                  // Special handling for "LockupViewModel" (New YouTube UI)
-                  if (item.lockupViewModel) {
-                    const lvm = item.lockupViewModel;
-                    playlistId = lvm.contentId;
-                    itemTitle = lvm.metadata?.lockupMetadataViewModel?.title?.content;
-                    thumbnail = lvm.contentImage?.collectionThumbnailViewModel?.primaryThumbnail?.image?.sources?.[0]?.url;
-                  }
+          // Handle: RichGrid -> RichSection -> RichShelf
+          else if (section.richSectionRenderer?.content?.richShelfRenderer) {
+            shelf = section.richSectionRenderer.content.richShelfRenderer;
+            shelfTitle = shelf.title?.runs?.[0]?.text || shelf.title?.simpleText;
+            itemsRaw = shelf.contents || [];
+          }
 
-                  if (playlistId && itemTitle) {
-                    items.push({
-                      playlistId,
-                      title: itemTitle,
-                      author: "YouTube Music",
-                      videoCount,
-                      thumbnail
-                    });
-                  }
-                }
+          if (!shelf || !shelfTitle) continue;
+
+          const items: YouTubePlaylistResult[] = [];
+
+          for (const itemWrapper of itemsRaw) {
+            // Unwrap RichItem if needed
+            const item = itemWrapper.richItemRenderer?.content || itemWrapper;
+
+            // We look for playlists (gridPlaylistRenderer) or videos/radios or LockupViewModel
+            const renderer = item.gridPlaylistRenderer || item.compactStationRenderer || item.lockupViewModel;
+
+            if (renderer) {
+              let playlistId = renderer.playlistId;
+              let itemTitle = renderer.title?.runs?.[0]?.text || renderer.title?.simpleText;
+              let thumbnail = renderer.thumbnails?.[0]?.url;
+              let videoCount = renderer.videoCountShortText?.simpleText || "Playlist";
+
+              // Fallback for Thumbnail in regular renderers
+              if (!thumbnail) {
+                const videoIdId = renderer.rendererContext?.commandContext?.onTap?.innertubeCommand?.watchEndpoint?.videoId;
+                if (videoIdId) thumbnail = `https://i.ytimg.com/vi/${videoIdId}/mqdefault.jpg`;
+              }
+
+              // Special handling for "LockupViewModel" (New YouTube UI)
+              if (item.lockupViewModel) {
+                const lvm = item.lockupViewModel;
+                playlistId = lvm.contentId;
+                itemTitle = lvm.metadata?.lockupMetadataViewModel?.title?.content;
+
+                // Extract thumbnail from deep LockupViewModel structure
+                thumbnail = lvm.contentImage?.collectionThumbnailViewModel?.primaryThumbnail?.image?.sources?.[0]?.url ||
+                  lvm.thumbnail?.ghostCardsThumbnailViewModel?.thumbnails?.[0]?.url ||
+                  "";
+              }
+
+              if (playlistId && itemTitle) {
+                items.push({
+                  playlistId,
+                  title: itemTitle,
+                  author: "YouTube Music",
+                  videoCount,
+                  thumbnail: thumbnail || ""
+                });
               }
             }
+          }
 
-            if (items.length > 0) {
-              sections.push({ title, items });
-            }
+          if (items.length > 0) {
+            sections.push({ title: shelfTitle, items });
           }
         }
       }
@@ -364,9 +391,6 @@ export async function scrapeYouTubeSearch(
   }
 }
 
-/**
- * Scrape with retry logic
- */
 /**
  * Scrape with retry logic
  */
