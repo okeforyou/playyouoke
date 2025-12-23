@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { scrapeYouTubePlaylistSearch } from "../../../utils/youtubeScraper";
+import { searchSpotifyPlaylists } from "../../../utils/spotify";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     const { q } = req.query;
@@ -9,15 +9,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     try {
-        console.log(`[API] Searching playlists via Direct Scraper for: ${q}`);
-        const results = await scrapeYouTubePlaylistSearch(q as string);
+        console.log(`[API] Searching playlists via Spotify API for: ${q}`);
+        const spotifyResults = await searchSpotifyPlaylists(q as string, 10);
 
-        if (results.length === 0) {
-            // Fallback: If scraping fails, maybe return error or empty?
-            // In critical user path, we might want to try ONE Invidious instance as fallback?
-            // For now, scraping is more reliable than Invidious public instances.
-            return res.status(200).json([]); // Empty array = "No results"
+        if (spotifyResults.length === 0) {
+            return res.status(200).json([]);
         }
+
+        // Map to compatible format (matches YouTubeScraperResult/YouTubePlaylistResult loosely)
+        // Frontend expects: playlistId, title, thumbnail, author, videoCount
+        const results = spotifyResults.map((item: any) => ({
+            playlistId: `sp-${item.id}`, // IMPORTANT: Prefix for resolver
+            title: item.name,
+            thumbnail: item.images?.[0]?.url || "",
+            author: item.owner?.display_name || "Spotify",
+            videoCount: item.tracks?.total?.toString() || "playlist"
+        }));
 
         return res.status(200).json(results);
 

@@ -1,11 +1,14 @@
 export interface GenreItem {
-    query: string; // Dynamic Search Query
+    query: string; // Keep for legacy/fallback search
+    playlistId?: string; // New Spotify ID
     title: string;
     description?: string;
     thumbnail: string;
     color: string;
 }
 
+// Dynamic Search Queries (Always Fresh)
+// Dynamic Search Queries (Always Fresh)
 // Dynamic Search Queries (Always Fresh)
 export const YOUTUBE_GENRES: GenreItem[] = [
     {

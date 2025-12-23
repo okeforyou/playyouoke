@@ -124,3 +124,20 @@ export async function getSpotifyAlbumTracks(albumId: string) {
         duration: item.duration_ms
     }));
 }
+
+/**
+ * Search Playlists on Spotify
+ */
+export async function searchSpotifyPlaylists(query: string, limit: number = 20) {
+    const token = await getSpotifyToken();
+    try {
+        const res = await axios.get(`https://api.spotify.com/v1/search`, {
+            params: { q: query, type: 'playlist', limit: limit },
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        return res.data.playlists.items;
+    } catch (e) {
+        console.error("Spotify Search Failed", e);
+        return [];
+    }
+}
