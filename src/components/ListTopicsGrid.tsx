@@ -102,13 +102,22 @@ export default function ListTopicsGrid({ showTab = true }) {
     setIsLoading(true);
     try {
       const searchRes = await axios.get(`/api/search/playlists`, { params: { q: query } });
-      if (searchRes.data?.[0]) {
-        handlePlaylistClick(searchRes.data[0].playlistId, searchRes.data[0].title);
+      if (searchRes.data && searchRes.data.length > 0) {
+        // Show results as a section
+        setExploreSections([
+          {
+            title: `ผลการค้นหา: "${query}"`,
+            items: searchRes.data
+          }
+        ]);
+        setUseFallback(false); // Switch to view mode
       } else {
         throw new Error("No results");
       }
     } catch (e) {
-      alert("ค้นหาไม่เจอครับ");
+      console.error(e);
+      alert("ค้นหาไม่เจอครับ - กรุณาลองใหม่อีกครั้ง");
+    } finally {
       setIsLoading(false);
     }
   };
