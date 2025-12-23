@@ -7,17 +7,111 @@
  * FREE, UNLIMITED, and MORE STABLE than Invidious!
  */
 
-interface YouTubeScraperResult {
-  videoId: string;
+// ============================================================================
+// MUSIC EXPLORE SCRAPING (Dynamic from YouTube Music)
+// ============================================================================
+
+export interface MusicSection {
   title: string;
-  author?: string;
-  authorId?: string;
-  videoThumbnails: Array<{
-    quality: string;
-    url: string;
-    width: number;
-    height: number;
-  }>;
+  items: YouTubePlaylistResult[];
+}
+
+/**
+ * Scrape YouTube Music Destination (Feed)
+ * URL: https://www.youtube.com/feed/music
+ */
+export async function scrapeMusicExplore(
+  timeout: number = 10000
+): Promise<MusicSection[]> {
+  const url = `https://www.youtube.com/feed/music`;
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': getRandomUserAgent(),
+        'Accept-Language': 'en-US,en;q=0.9,th;q=0.8',
+      },
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) throw new Error(`YouTube returned status ${response.status}`);
+    const html = await response.text();
+    const ytInitialData = extractYtInitialData(html);
+
+    if (!ytInitialData) throw new Error('Could not find ytInitialData');
+
+    // Traverse tabs -> content -> sectionList -> contents
+    const tabs = ytInitialData?.contents?.twoColumnBrowseResultsRenderer?.tabs;
+    const sections: MusicSection[] = [];
+
+    if (tabs) {
+      for (const tab of tabs) {
+        const sectionList = tab?.tabRenderer?.content?.sectionListRenderer?.contents;
+        if (sectionList) {
+          for (const section of sectionList) {
+            const shelf = section?.itemSectionRenderer?.contents?.[0]?.shelfRenderer;
+            if (!shelf) continue;
+
+            const title = shelf.title?.runs?.[0]?.text || shelf.title?.simpleText;
+            if (!title) continue;
+
+            const items: YouTubePlaylistResult[] = [];
+            const contentItems = shelf.content?.horizontalListRenderer?.items || shelf.content?.expandedShelfContentsRenderer?.items;
+
+            if (contentItems) {
+              for (const item of contentItems) {
+                // We look for playlists (gridPlaylistRenderer) or videos/radios
+                // Prioritize Playlists for this feature
+                const renderer = item.gridPlaylistRenderer || item.compactStationRenderer || item.lockupViewModel;
+
+                if (renderer) {
+                  // Handle different renderer types common in Music/Explore
+                  let playlistId = renderer.playlistId;
+                  let itemTitle = renderer.title?.runs?.[0]?.text || renderer.title?.simpleText;
+                  let thumbnail = renderer.thumbnails?.[0]?.url || renderer.rendererContext?.commandContext?.onTap?.innertubeCommand?.watchEndpoint?.videoId ? `https://i.ytimg.com/vi/${renderer.rendererContext?.commandContext?.onTap?.innertubeCommand?.watchEndpoint?.videoId}/mqdefault.jpg` : "";
+                  const videoCount = renderer.videoCountShortText?.simpleText || "Playlist";
+
+                  // Special handling for "LockupViewModel" (New YouTube UI)
+                  if (item.lockupViewModel) {
+                    const lvm = item.lockupViewModel;
+                    playlistId = lvm.contentId;
+                    itemTitle = lvm.metadata?.lockupMetadataViewModel?.title?.content;
+                    thumbnail = lvm.contentImage?.collectionThumbnailViewModel?.primaryThumbnail?.image?.sources?.[0]?.url;
+                  }
+
+                  if (playlistId && itemTitle) {
+                    items.push({
+                      playlistId,
+                      title: itemTitle,
+                      author: "YouTube Music",
+                      videoCount,
+                      thumbnail
+                    });
+                  }
+                }
+              }
+            }
+
+            if (items.length > 0) {
+              sections.push({ title, items });
+            }
+          }
+        }
+      }
+    }
+
+    console.log(`[YouTube Scraper] Parsed ${sections.length} music sections`);
+    return sections;
+
+  } catch (error: any) {
+    console.error("[YouTube Scraper] Music explore failed:", error.message);
+    throw error;
+  }
 }
 
 /**

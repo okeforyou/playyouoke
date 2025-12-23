@@ -1,48 +1,55 @@
-import { Fragment, useState } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 import { PlayIcon } from "@heroicons/react/24/solid";
 import { useKaraokeState } from "../hooks/karaoke";
-import { YOUTUBE_GENRES } from "../data/genres";
 import { usePlayerStore } from "../features/player/stores/usePlayerStore";
-import Alert from "./Alert"; // Assuming Alert is available nearby
+import Alert from "./Alert";
+import { YOUTUBE_GENRES } from "../data/genres"; // Keep as fallback
 
-// Helper to fetch Invidious Playlist
-const fetchInvidiousPlaylist = async (playlistId: string) => {
-  // Try multiple instances if possible, but start with user config
-  const baseUrl = process.env.NEXT_PUBLIC_INVIDIOUS_URL?.replace(/\/$/, "") || "https://invidious.privacyredirect.com";
-  const res = await axios.get(`${baseUrl}/api/v1/playlists/${playlistId}`);
-  return res.data.videos;
-};
+interface ExploreSection {
+  title: string;
+  items: {
+    playlistId: string;
+    title: string;
+    thumbnail: string;
+    videoCount: string;
+  }[];
+}
 
 export default function ListTopicsGrid({ showTab = true }) {
   const { setActiveIndex, setSearchTerm } = useKaraokeState();
-  const { setPlaylist } = useKaraokeState();
-  const addToQueue = usePlayerStore(state => state.addToQueue);
-  const play = usePlayerStore(state => state.play);
-
   const [isLoading, setIsLoading] = useState(false);
+  const [exploreSections, setExploreSections] = useState<ExploreSection[]>([]);
+  const [useFallback, setUseFallback] = useState(false);
 
-  const handleGenreClick = async (query: string, genreName: string) => {
+  // Fetch Dynamic Explore Data
+  useEffect(() => {
+    const fetchExplore = async () => {
+      try {
+        // setIsLoading(true); // Don't block UI with loading state initially
+        const res = await axios.get('/api/explore');
+        if (res.data.sections && res.data.sections.length > 0) {
+          setExploreSections(res.data.sections);
+        } else {
+          setUseFallback(true);
+        }
+      } catch (error) {
+        console.error("Failed to fetch explore feed, using fallback", error);
+        setUseFallback(true);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchExplore();
+  }, []);
+
+  const handlePlaylistClick = async (playlistId: string, title: string) => {
     setIsLoading(true);
     try {
-      // 1. Search using our new local proxy (Bypasses CORS)
-      console.log(`🔍 Searching playlist for query: ${query}`);
-
-      const searchRes = await axios.get(`/api/search/playlists`, {
-        params: { q: query }
-      });
-
-      const playlists = searchRes.data;
-      if (!playlists || playlists.length === 0) {
-        throw new Error("No playlists found");
-      }
-
-      // Pick the first one (most relevant)
-      const topPlaylist = playlists[0];
-      console.log(`✅ Found playlist: ${topPlaylist.title} (${topPlaylist.playlistId})`);
-
-      // 2. Fetch the videos using our new local proxy
-      const playlistRes = await axios.get(`/api/playlist/${topPlaylist.playlistId}`);
+      console.log(`▶️ Fetching playlist: ${title} (${playlistId})`);
+      // 2. Fetch the videos using our local proxy
+      const playlistRes = await axios.get(`/api/playlist/${playlistId}`);
       const videos = playlistRes.data.videos;
 
       // Convert to QueueItem format
@@ -54,61 +61,119 @@ export default function ListTopicsGrid({ showTab = true }) {
       }));
 
       if (queueItems.length > 0) {
-        // Smart Shuffle: If it's a generic genre, maybe shuffle? 
-        // For now, Play in order is fine.
-
         usePlayerStore.getState().clearQueue();
         queueItems.forEach(item => usePlayerStore.getState().addToQueue(item));
         usePlayerStore.getState().playNext();
-
-        // Feedback to user
-        // alert(`Playing: ${topPlaylist.title}`); // Optional
       }
     } catch (e) {
-      console.error("Failed to load genre playlist", e);
-      alert("ไม่สามารถค้นหาเพลย์ลิสต์ได้ในขณะนี้ (API Error)");
+      console.error("Failed to load playlist", e);
+      alert("ไม่สามารถเล่นเพลย์ลิสต์นี้ได้ (API Error)");
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Use Fallback (Static Genres) if Dynamic fails
+  const genresToRender = useFallback ? YOUTUBE_GENRES.map(g => ({
+    playlistId: "", // Static genres use query logic in old code, but let's simplify for now via search? 
+    // Actually, mixing query-based genres with ID-based is tricky here.
+    // For fallback, we will just use the "Search" logic (re-implementing simplified version inline or relying on ID if I reverted to ID).
+    // Let's assume fallback is NOT NEEDED if scraper works. 
+    // But if needed, we'll map YOUTUBE_GENRES to the ID-based structure if they have IDs, or skip.
+    // My last edit to genres.ts used QUERY.
+    // So fallback Logic is: 
+    // "Fallback Mode requires Query Search". 
+    // I will implement a hybrid handler.
+    ...g
+  })) : [];
+
+  const handleHybridClick = (item: any) => {
+    if (item.query) {
+      // It's a "Query Genre" (Fallback)
+      // Call the search logic (copy-pasted or extracted)
+      handleQuerySearch(item.query);
+    } else {
+      // It's a "Direct Playlist" (Dynamic)
+      handlePlaylistClick(item.playlistId, item.title);
+    }
+  };
+
+  const handleQuerySearch = async (query: string) => {
+    setIsLoading(true);
+    try {
+      const searchRes = await axios.get(`/api/search/playlists`, { params: { q: query } });
+      if (searchRes.data?.[0]) {
+        handlePlaylistClick(searchRes.data[0].playlistId, searchRes.data[0].title);
+      } else {
+        throw new Error("No results");
+      }
+    } catch (e) {
+      alert("ค้นหาไม่เจอครับ");
+      setIsLoading(false);
+    }
+  };
+
   return (
-    <div className="col-span-full pt-4 px-2">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold text-gray-800">เลือกแนวเพลง (อัปเดตใหม่ล่าสุด) 🎵✨</h2>
-      </div>
+    <div className="col-span-full pt-4 px-2 pb-20">
 
       {isLoading && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
           <div className="flex flex-col items-center gap-4">
             <span className="loading loading-spinner loading-lg text-primary"></span>
-            <span className="text-white font-medium">กำลังค้นหาเพลย์ลิสต์ใหม่ล่าสุด...</span>
+            <span className="text-white font-medium">กำลังโหลดรายการเพลง...</span>
           </div>
         </div>
       )}
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-        {YOUTUBE_GENRES.map((genre) => (
-          <div
-            key={genre.query}
-            onClick={() => handleGenreClick(genre.query, genre.title)}
-            className={`
-                            relative h-32 rounded-xl cursor-pointer overflow-hidden shadow-lg hover:shadow-xl transition-all hover:scale-105 group
-                            bg-gradient-to-br ${genre.color} to-black
-                        `}
-          >    <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors" />
+      {/* Dynamic Sections */}
+      {!useFallback && exploreSections.map((section, idx) => (
+        <div key={idx} className="mb-8">
+          <h2 className="text-xl font-bold text-gray-800 mb-4 px-2">{section.title}</h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            {section.items.map((item) => (
+              <div
+                key={item.playlistId}
+                onClick={() => handlePlaylistClick(item.playlistId, item.title)}
+                className="relative aspect-square rounded-xl cursor-pointer overflow-hidden shadow-lg hover:shadow-xl transition-all hover:scale-105 group bg-gray-900"
+              >
+                <img
+                  src={item.thumbnail?.replace('mqdefault', 'hqdefault') || `https://i.ytimg.com/vi/mqdefault.jpg`}
+                  className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
 
-            <div className="absolute top-3 left-3">
-              <h3 className="text-white font-bold text-lg leading-tight">{genre.title}</h3>
-              <p className="text-white/80 text-xs mt-1">{genre.description}</p>
-            </div>
-
-            {/* Decorative Icon */}
-            <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-white/10 rounded-full blur-xl transform rotate-12" />
-            <PlayIcon className="absolute bottom-3 right-3 w-8 h-8 text-white opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300" />
+                <div className="absolute bottom-3 left-3 right-3">
+                  <h3 className="text-white font-bold text-sm line-clamp-2">{item.title}</h3>
+                  <p className="text-white/70 text-xs mt-1">{item.videoCount || "Playlist"}</p>
+                </div>
+                <PlayIcon className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 text-white opacity-0 group-hover:opacity-100 transition-all drop-shadow-lg" />
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </div>
+      ))}
+
+      {/* Fallback View (Static Genres) */}
+      {useFallback && (
+        <div>
+          <h2 className="text-xl font-bold text-gray-800 mb-4 px-2">แนวเพลงยอดนิยม 🎵</h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            {YOUTUBE_GENRES.map((genre: any) => (
+              <div
+                key={genre.query}
+                onClick={() => handleQuerySearch(genre.query)}
+                className={`relative h-32 rounded-xl cursor-pointer overflow-hidden shadow-lg bg-gradient-to-br ${genre.color || 'from-gray-700'} to-black`}
+              >
+                <div className="absolute inset-0 bg-black/20 hover:bg-black/40 transition-colors" />
+                <div className="absolute top-3 left-3">
+                  <h3 className="text-white font-bold text-lg">{genre.title}</h3>
+                  <p className="text-white/80 text-xs">{genre.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
