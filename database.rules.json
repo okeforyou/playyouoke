@@ -34,7 +34,7 @@
     },
     "system": {
       "config": {
-        ".read": "auth != null",
+        ".read": true,
         ".write": "auth != null"
       }
     }
