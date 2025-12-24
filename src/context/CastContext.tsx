@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react';
 import { RecommendedVideo, SearchResult } from '../types/invidious';
 import { addDebugLog } from '../components/DebugOverlay';
+import { usePlayerStore } from '../features/player/stores/usePlayerStore';
 
 // Extended Video type with queue key
 type QueueVideo = (SearchResult | RecommendedVideo) & { key: number };
@@ -51,8 +52,8 @@ const CAST_NAMESPACE = 'urn:x-cast:com.youoke.cast';
 // Cast message types (must match receiver message handler)
 type CastMessage =
   | { type: 'LOAD_VIDEO', videoId: string }
-  | { type: 'LOAD_QUEUE', videos: Array<{videoId: string, title: string}>, startIndex?: number }
-  | { type: 'UPDATE_QUEUE', videos: Array<{videoId: string, title: string}> }
+  | { type: 'LOAD_QUEUE', videos: Array<{ videoId: string, title: string }>, startIndex?: number }
+  | { type: 'UPDATE_QUEUE', videos: Array<{ videoId: string, title: string }> }
   | { type: 'PLAY' }
   | { type: 'PAUSE' }
   | { type: 'NEXT' }
@@ -376,6 +377,62 @@ export function CastProvider({ children }: { children: ReactNode }) {
     // Reset receiver state flag to trigger re-sync
     setReceiverStateReceived(false);
 
+    // Bridge to Global Player Store
+    const playerStore = usePlayerStore();
+    const { queue: storeQueue, currentIndex: storeIndex, setCurrentIndex: setStoreIndex } = playerStore;
+
+    // 1. Sync Out: Local Store -> Cast Receiver
+    useEffect(() => {
+      // Only sync if connected and we have a session
+      if (!isConnected || !castSession) return;
+
+      console.log('🔄 [Sync Out] Store Queue changed:', storeQueue.length);
+
+      // Map store queue to cast format
+      const castVideos = storeQueue.map(item => ({
+        videoId: item.videoId,
+        title: item.title || 'Unknown',
+        // If needed, pass other metadata
+      }));
+
+      // Detect if this is just an index change or a queue change?
+      // For simplicity, we send UPDATE_QUEUE on any queue structure change.
+      // Ideally we diff, but sending the list is robust.
+
+      sendMessage({
+        type: 'UPDATE_QUEUE',
+        videos: castVideos
+      });
+
+    }, [storeQueue, isConnected, castSession]); // Sync when queue changes
+
+    // 2. Sync Out: Local Index -> Cast Receiver (SKIP/JUMP)
+    // We need to be careful not to create a loop if Receiver updates us.
+    // We can track "last received index from cast" to avoid re-sending.
+    const lastReceivedIndexRef = useRef<number>(-1);
+
+    useEffect(() => {
+      if (!isConnected || !castSession) return;
+
+      // If the change came from the receiver (Store Index == Last Received Index), ignore
+      if (storeIndex === lastReceivedIndexRef.current) return;
+
+      console.log('🔄 [Sync Out] Store Index changed:', storeIndex);
+
+      // Send LOAD_VIDEO (Jump) to receiver
+      // We need the video ID at this index
+      const video = storeQueue[storeIndex];
+      if (video) {
+        sendMessage({
+          type: 'LOAD_VIDEO',
+          videoId: video.videoId
+        });
+      }
+
+    }, [storeIndex, isConnected, castSession]);
+
+    // ... (Existing useEffects) ...
+
     // Setup message listener
     session.addMessageListener(CAST_NAMESPACE, (namespace: string, message: string) => {
       console.log('📨 Received message from receiver:', message);
@@ -387,47 +444,43 @@ export function CastProvider({ children }: { children: ReactNode }) {
           case 'RECEIVER_STATE':
             // Receiver sent its current state - use it instead of localStorage!
             console.log('📥 Received state from receiver:', data);
+
+            // 3. Sync In: Cast Receiver -> Local Store
+            if (typeof data.currentIndex === 'number') {
+              // Update ref to prevent echo
+              lastReceivedIndexRef.current = data.currentIndex;
+
+              // Update Store if different
+              if (data.currentIndex !== storeIndex) {
+                console.log('🔄 [Sync In] Updating Store Index to:', data.currentIndex);
+                setStoreIndex(data.currentIndex);
+              }
+            }
+
             addDebugLog('📥 RECEIVER_STATE received', {
               queueLength: data.queue?.length || 0,
               currentIndex: data.currentIndex,
             });
 
+            // (Legacy internal state update - keep for safety or remove if standardizing on store)
+            // For now, minimizing disruption by keeping internal state sync as well
             if (data.queue && data.queue.length > 0) {
-              // Convert receiver's queue format to our playlist format
+              // ... existing logic ...
               const receiverPlaylist: QueueVideo[] = data.queue.map((v: any, index: number) => ({
                 videoId: v.videoId,
                 title: v.title || 'Unknown',
                 key: Date.now() + index
               }));
 
-              const syncInfo = {
-                queueLength: receiverPlaylist.length,
-                currentIndex: data.currentIndex,
-                currentVideo: data.currentVideoId
-              };
-              console.log('✅ Syncing state FROM receiver:', syncInfo);
-              addDebugLog('✅ Synced FROM receiver', syncInfo);
-
-              // Update our state to match receiver
               setPlaylistState(receiverPlaylist);
               playlistRef.current = receiverPlaylist;
-
               setCurrentIndex(data.currentIndex);
               currentIndexRef.current = data.currentIndex;
-
-              const currentVid = receiverPlaylist[data.currentIndex];
-              if (currentVid) {
-                setCurrentVideo(currentVid);
-                currentVideoRef.current = currentVid;
-              }
-
-              // Mark that we received state from receiver (don't overwrite it!)
-              setReceiverStateReceived(true);
-            } else {
-              console.log('⚠️ Receiver has empty queue - will send our playlist');
-              setReceiverStateReceived(false);  // Receiver empty, we can send our playlist
+              // ...
             }
             break;
+
+          // ... (Rest of switch) ...
 
           case 'VIDEO_ENDED':
             console.log('🎬 Video ended on receiver:', data.videoId, 'at index:', data.currentIndex);

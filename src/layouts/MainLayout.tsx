@@ -7,6 +7,7 @@ import { SidebarPlayer } from '../features/player/components/SidebarPlayer';
 import { PlayerControls } from '../features/player/components/PlayerControls';
 import { QueueList } from '../features/player/components/QueueList';
 import { MobileMiniPlayer } from '../features/player/components/MobileMiniPlayer';
+import { CastButton } from '../components/CastButton';
 
 interface MainLayoutProps {
     children: ReactNode;
@@ -98,7 +99,10 @@ export default function MainLayout({ children }: MainLayoutProps) {
                                     </Link>
                                 )}
 
-                                {/* CAST BUTTON */}
+                                {/* GOOGLE CAST BUTTON (Chromecast) */}
+                                <CastButton />
+
+                                {/* FIREBASE REMOTE BUTTON (QR Code) */}
                                 <div className="relative">
                                     <button
                                         onClick={() => setShowQRCode(!showQRCode)}
