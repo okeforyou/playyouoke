@@ -4,7 +4,7 @@ import { useRouter } from "next/router";
 import { useAuthStore } from "../../features/auth/useAuthStore";
 import { useSystemConfig } from "../../hooks/useSystemConfig";
 import { updateSystemConfig, SystemConfig } from "../../services/systemConfigService";
-import { toast } from "react-hot-toast"; // Assuming we have toast or similar, otherwise plain alert
+// import { toast } from "react-hot-toast"; // Removed to fix build error
 
 export default function AdminSettingsPage() {
     const { user } = useAuthStore();
