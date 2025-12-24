@@ -16,7 +16,11 @@ export default async function handler(
 
     const accessToken = await getAccessToken();
 
-    const playlistId = tagId;
+    let playlistId = tagId;
+    // Strip sp- prefix if present (added by search/playlists.ts)
+    if (playlistId.startsWith('sp-')) {
+      playlistId = playlistId.replace('sp-', '');
+    }
     // Fetching the specific playlist by ID
     const playlistResponse = await axios.get(
       `https://api.spotify.com/v1/playlists/${playlistId}/tracks`,
