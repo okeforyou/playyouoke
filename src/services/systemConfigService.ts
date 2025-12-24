@@ -75,6 +75,10 @@ export const subscribeToSystemConfig = (callback: (config: SystemConfig) => void
         } else {
             callback(DEFAULT_CONFIG);
         }
+    }, (error) => {
+        console.error("System Config Subscription Error:", error);
+        // Fallback to default config on error (e.g. permission denied)
+        callback(DEFAULT_CONFIG);
     });
     return () => off(configRef, "value", listener);
 };

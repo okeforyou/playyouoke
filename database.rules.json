@@ -13,7 +13,10 @@
         "commands": {
           ".read": true,
           ".write": true,
-          ".indexOn": ["timestamp", "status"]
+          ".indexOn": [
+            "timestamp",
+            "status"
+          ]
         },
         "state": {
           ".read": true,
@@ -23,6 +26,16 @@
           ".read": true,
           ".write": true
         }
+      }
+    },
+    "antigravity_rooms": {
+      ".read": true,
+      ".write": true
+    },
+    "system": {
+      "config": {
+        ".read": "auth != null",
+        ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'"
       }
     }
   }
