@@ -378,7 +378,8 @@ export function CastProvider({ children }: { children: ReactNode }) {
     setReceiverStateReceived(false);
 
     // Bridge to Global Player Store
-    const playerStore = usePlayerStore();
+    // Bridge to Global Player Store (Manual Access)
+    const playerStore = usePlayerStore.getState();
     const { queue: storeQueue, currentIndex: storeIndex, setCurrentIndex: setStoreIndex } = playerStore;
 
     // 1. Sync Out: Local Store -> Cast Receiver
