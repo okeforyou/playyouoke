@@ -8,6 +8,7 @@ import { PlayerControls } from '../features/player/components/PlayerControls';
 import { QueueList } from '../features/player/components/QueueList';
 import { MobileMiniPlayer } from '../features/player/components/MobileMiniPlayer';
 import { CastButton } from '../components/CastButton';
+import { useSystemConfig } from '../hooks/useSystemConfig';
 
 interface MainLayoutProps {
     children: ReactNode;
@@ -15,7 +16,15 @@ interface MainLayoutProps {
 
 export default function MainLayout({ children }: MainLayoutProps) {
     const [isQueueOpen, setQueueOpen] = useState(false); // Mobile Queue Drawer
+
+    // Auth & Config
     const { user } = useAuthStore();
+    const { config } = useSystemConfig();
+
+    // Permission Check
+    const userRole = (user?.role === 'admin' || user?.role === 'premium') ? 'premium' : 'free';
+    const allowRemote = config?.membership[userRole]?.allow_remote ?? true;
+
     const [roomCode, setRoomCode] = useState<string | null>(null);
     const [showQRCode, setShowQRCode] = useState(false);
     const [mounted, setMounted] = useState(false);
@@ -103,48 +112,50 @@ export default function MainLayout({ children }: MainLayoutProps) {
                                 <CastButton />
 
                                 {/* FIREBASE REMOTE BUTTON (QR Code) */}
-                                <div className="relative">
-                                    <button
-                                        onClick={() => setShowQRCode(!showQRCode)}
-                                        className={`btn btn-secondary btn-sm gap-2 ${showQRCode ? 'btn-active' : ''}`}
-                                    >
-                                        <span className="text-lg">📱</span>
-                                        <span className="hidden sm:inline">Remote</span>
-                                    </button>
+                                {allowRemote && (
+                                    <div className="relative">
+                                        <button
+                                            onClick={() => setShowQRCode(!showQRCode)}
+                                            className={`btn btn-secondary btn-sm gap-2 ${showQRCode ? 'btn-active' : ''}`}
+                                        >
+                                            <span className="text-lg">📱</span>
+                                            <span className="hidden sm:inline">Remote</span>
+                                        </button>
 
-                                    {/* QR CODE POPUP */}
-                                    {showQRCode && roomCode && (
-                                        <div className="absolute top-full right-0 mt-2 p-4 bg-white shadow-xl rounded-xl border border-border z-50 w-64 text-center animate-in fade-in zoom-in-95 duration-200">
-                                            <h3 className="font-bold text-gray-900 mb-2">Scan to Control</h3>
-                                            <div className="bg-white p-2 rounded-lg border border-gray-100 inline-block mb-2">
-                                                {/* We need qrcode.react here. Importing it dynamically or assuming it's available? 
+                                        {/* QR CODE POPUP */}
+                                        {showQRCode && roomCode && (
+                                            <div className="absolute top-full right-0 mt-2 p-4 bg-white shadow-xl rounded-xl border border-border z-50 w-64 text-center animate-in fade-in zoom-in-95 duration-200">
+                                                <h3 className="font-bold text-gray-900 mb-2">Scan to Control</h3>
+                                                <div className="bg-white p-2 rounded-lg border border-gray-100 inline-block mb-2">
+                                                    {/* We need qrcode.react here. Importing it dynamically or assuming it's available? 
                                                     The original monitor.tsx used QRCodeSVG from 'qrcode.react' 
                                                     Let's import it at top level or assume dynamic.
                                                     Actually, I should add the import.
                                                   */}
-                                                {roomCode ? (
-                                                    <img
-                                                        src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(
-                                                            `${typeof window !== 'undefined' ? window.location.origin : ''}/remote?room=${roomCode}`
-                                                        )}`}
-                                                        alt="QR Code"
-                                                        className="w-full h-auto"
-                                                    />
-                                                ) : (
-                                                    <div className="w-[150px] h-[150px] flex items-center justify-center bg-gray-100 text-gray-400 text-xs">
-                                                        Generating...
-                                                    </div>
-                                                )}
+                                                    {roomCode ? (
+                                                        <img
+                                                            src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(
+                                                                `${typeof window !== 'undefined' ? window.location.origin : ''}/remote?room=${roomCode}`
+                                                            )}`}
+                                                            alt="QR Code"
+                                                            className="w-full h-auto"
+                                                        />
+                                                    ) : (
+                                                        <div className="w-[150px] h-[150px] flex items-center justify-center bg-gray-100 text-gray-400 text-xs">
+                                                            Generating...
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div className="text-2xl font-mono font-bold tracking-widest text-primary mb-1">
+                                                    {roomCode}
+                                                </div>
+                                                <p className="text-xs text-gray-500">
+                                                    Use your phone to control playback, add songs, and view queue.
+                                                </p>
                                             </div>
-                                            <div className="text-2xl font-mono font-bold tracking-widest text-primary mb-1">
-                                                {roomCode}
-                                            </div>
-                                            <p className="text-xs text-gray-500">
-                                                Use your phone to control playback, add songs, and view queue.
-                                            </p>
-                                        </div>
-                                    )}
-                                </div>
+                                        )}
+                                    </div>
+                                )}
                             </>
                         )}
                     </div>

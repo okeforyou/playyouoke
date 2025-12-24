@@ -2,11 +2,20 @@ import React from 'react';
 import { Cast, Cast as CastIcon, X } from 'lucide-react';
 import { useCast } from '../context/CastContext';
 
+import { useSystemConfig } from '../hooks/useSystemConfig';
+import { useAuthStore } from '../features/auth/useAuthStore';
+
 export const CastButton = () => {
   const { isAvailable, isConnected, connect, disconnect, receiverName } = useCast();
 
-  if (!isAvailable) {
-    return null; // Don't show if Cast SDK not ready or no devices
+  // Permission Check
+  const { config } = useSystemConfig();
+  const { user } = useAuthStore();
+  const userRole = (user?.role === 'admin' || user?.role === 'premium') ? 'premium' : 'free';
+  const allowed = config?.membership[userRole]?.allow_cast ?? false;
+
+  if (!isAvailable || !allowed) {
+    return null; // Don't show if Cast SDK not ready or not allowed
   }
 
   if (isConnected) {
