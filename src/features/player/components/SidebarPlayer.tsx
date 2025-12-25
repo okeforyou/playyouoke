@@ -7,7 +7,7 @@ import { useSystemConfig } from "../../../hooks/useSystemConfig";
 import { useAuthStore } from "../../auth/useAuthStore";
 
 export const SidebarPlayer = () => {
-    const { currentSource, isPlaying } = usePlayerStore();
+    const { currentSource, isPlaying, currentVideo } = usePlayerStore();
     const playerRef = useRef<any>(null);
 
     // System Config & Auth for Restrictions
@@ -47,6 +47,21 @@ export const SidebarPlayer = () => {
         }
 
     }, [currentSource, maxDailySongs]);
+
+    // Initialize CastService (Host Mode)
+    useEffect(() => {
+        // Only init if we are the "Host" (Desktop/Browser)
+        // Ideally we check if we are casting? No, we ARE the host even if not casting physically.
+        // We want to be controllable by Remote.
+        import("../../cast/services/CastService").then(({ castService }) => {
+            castService.initialize().then((code) => {
+                console.log("📡 Host Service Started. Room Code:", code);
+                // Optionally save code to state to display it
+            });
+        });
+
+        // Cleanup? castService.cleanup() but maybe we want it persistent.
+    }, []);
 
     useEffect(() => {
         console.log("🔍 SidebarPlayer Limits Updated:", { userRole, maxDuration, showAds, configLoaded: !!config });
@@ -137,21 +152,21 @@ export const SidebarPlayer = () => {
 
             {/* Added By Toast (Optional - shows who requested current song) */}
             {/* Added By Toast (Animated) */}
-            {currentSource && usePlayerStore.getState().currentVideo?.addedBy && (
+            {currentSource && currentVideo?.addedBy && (
                 <div className="absolute bottom-4 left-4 z-30 animate-in slide-in-from-left duration-700 fade-in fill-mode-both">
                     <div className="flex items-center gap-3 bg-black/60 backdrop-blur-md border border-white/10 rounded-full pl-2 pr-5 py-2 shadow-2xl">
                         <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center text-lg shadow-inner">
                             {/* Avatar or Initial */}
-                            {usePlayerStore.getState().currentVideo?.addedBy?.photoURL ? (
-                                <img src={usePlayerStore.getState().currentVideo?.addedBy?.photoURL} className="w-full h-full rounded-full" />
+                            {currentVideo.addedBy.photoURL ? (
+                                <img src={currentVideo.addedBy.photoURL} className="w-full h-full rounded-full" />
                             ) : (
-                                <span>{usePlayerStore.getState().currentVideo?.addedBy?.displayName?.charAt(0).toUpperCase()}</span>
+                                <span>{currentVideo.addedBy.displayName?.charAt(0).toUpperCase()}</span>
                             )}
                         </div>
                         <div className="flex flex-col">
                             <span className="text-[10px] text-gray-300 font-bold uppercase tracking-wider leading-none mb-1">Requested By</span>
                             <span className="text-sm font-bold text-white leading-none truncate max-w-[150px]">
-                                {usePlayerStore.getState().currentVideo?.addedBy?.displayName}
+                                {currentVideo.addedBy.displayName}
                             </span>
                         </div>
                     </div>
