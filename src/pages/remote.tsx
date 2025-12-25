@@ -79,6 +79,7 @@ export default function RemotePage() {
     const [searchResults, setSearchResults] = useState<any[]>([]);
     const [isSearching, setSearching] = useState(false);
     const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout | null>(null);
+    const [searchMode, setSearchMode] = useState<'video' | 'karaoke'>('video'); // New State
 
     useEffect(() => {
         // Load name from storage on mount
@@ -182,8 +183,12 @@ export default function RemotePage() {
     };
 
     // Search Logic
-    const handleSearch = async (term: string, immediate = false) => {
+    const handleSearch = async (term: string, mode: 'video' | 'karaoke' = searchMode, immediate = false) => {
         setSearchTerm(term);
+        // We don't update searchMode here, as it's controlled by tabs. 
+        // But for internal logic we use the passed mode or current state.
+        const activeMode = mode;
+
         if (debounceTimer) clearTimeout(debounceTimer);
 
         if (!term.trim()) {
@@ -198,7 +203,11 @@ export default function RemotePage() {
             try {
                 // Dynamic import to avoid SSR issues if api utils use browser stuff
                 const { getSearchResult } = await import('../utils/api');
-                const results = await getSearchResult({ q: term });
+
+                // Append 'karaoke' if in karaoke mode
+                const query = activeMode === 'karaoke' ? `${term} karaoke` : term;
+
+                const results = await getSearchResult({ q: query });
                 setSearchResults(results);
             } catch (e) {
                 console.error('Search failed', e);
@@ -388,18 +397,37 @@ export default function RemotePage() {
             {/* Search Modal */}
             {isSearchOpen && (
                 <div className="fixed inset-0 bg-gray-900 z-50 flex flex-col animate-in slide-in-from-bottom duration-200">
-                    <div className="p-4 flex gap-3 items-center border-b border-gray-800 bg-gray-900">
-                        <button onClick={() => setSearchOpen(false)} className="text-gray-400 hover:text-white p-2">
-                            ✕
-                        </button>
-                        <input
-                            autoFocus
-                            type="text"
-                            placeholder="Search YouTube..."
-                            className="flex-1 bg-gray-800 border-none rounded-full px-5 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none text-white placeholder-gray-500 transition-all"
-                            value={searchTerm}
-                            onChange={(e) => handleSearch(e.target.value)}
-                        />
+                    <div className="p-4 border-b border-gray-800 bg-gray-900 space-y-3">
+                        {/* Search Input Row */}
+                        <div className="flex gap-3 items-center">
+                            <button onClick={() => setSearchOpen(false)} className="text-gray-400 hover:text-white p-2">
+                                ✕
+                            </button>
+                            <input
+                                autoFocus
+                                type="text"
+                                placeholder={searchMode === 'karaoke' ? "Search for karaoke..." : "Search YouTube..."}
+                                className="flex-1 bg-gray-800 border-none rounded-full px-5 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none text-white placeholder-gray-500 transition-all"
+                                value={searchTerm}
+                                onChange={(e) => handleSearch(e.target.value, searchMode)}
+                            />
+                        </div>
+
+                        {/* Search Mode Tabs - NEW */}
+                        <div className="flex bg-gray-800 p-1 rounded-lg">
+                            <button
+                                onClick={() => { setSearchMode('video'); handleSearch(searchTerm, 'video', true); }}
+                                className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all flex items-center justify-center gap-2 ${searchMode === 'video' ? 'bg-indigo-600 text-white shadow' : 'text-gray-400 hover:text-gray-200'}`}
+                            >
+                                🎵 Song (MV)
+                            </button>
+                            <button
+                                onClick={() => { setSearchMode('karaoke'); handleSearch(searchTerm, 'karaoke', true); }}
+                                className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all flex items-center justify-center gap-2 ${searchMode === 'karaoke' ? 'bg-pink-600 text-white shadow' : 'text-gray-400 hover:text-gray-200'}`}
+                            >
+                                🎤 Karaoke
+                            </button>
+                        </div>
                     </div>
 
                     <div className="flex-1 overflow-y-auto p-4 custom-scrollbar bg-gray-900">
@@ -434,7 +462,7 @@ export default function RemotePage() {
                                     {CATEGORIES.map((cat) => (
                                         <button
                                             key={cat.id}
-                                            onClick={() => handleSearch(cat.query, true)}
+                                            onClick={() => handleSearch(cat.query, searchMode, true)}
                                             className={`relative h-24 rounded-xl overflow-hidden shadow-lg hover:scale-[1.02] active:scale-95 transition-all duration-200 bg-gradient-to-br ${cat.color} p-3 text-left`}
                                         >
                                             <span className="font-bold text-white text-lg leading-tight block w-2/3 shadow-black drop-shadow-md">
