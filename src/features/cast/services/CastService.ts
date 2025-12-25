@@ -209,6 +209,12 @@ export class CastService {
             case 'CLEAR_QUEUE':
                 store.clearQueue();
                 break;
+            case 'REORDER_QUEUE':
+                if (Array.isArray(command.payload?.queue)) {
+                    console.log('🔄 Reordering queue via remote command');
+                    store.reorderQueue(command.payload.queue);
+                }
+                break;
         }
     }
 }

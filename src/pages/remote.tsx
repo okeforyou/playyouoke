@@ -4,6 +4,48 @@ import { signInAnonymously } from 'firebase/auth';
 import { auth, realtimeDb } from '../firebase';
 import { QueueItem } from '../features/player/types';
 import { PlayIcon, PauseIcon, ForwardIcon, BackwardIcon } from '@heroicons/react/24/solid';
+import { DndContext, closestCenter, TouchSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
+import { arrayMove, SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+
+// Sortable Item Component
+const SortableRemoteItem = ({ item, index, isCurrent }: any) => {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging
+    } = useSortable({ id: item.uuid || item.key || index }); // Fallback to key/index if uuid missing
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        zIndex: isDragging ? 50 : 'auto',
+        opacity: isDragging ? 0.5 : 1,
+        touchAction: 'none' // Critical for mobile dragging
+    };
+
+    return (
+        <li ref={setNodeRef} style={style} className={`p-3 rounded-lg flex gap-3 items-center select-none ${isCurrent ? 'bg-indigo-900/30 border border-indigo-500/30' : 'bg-gray-800/30'}`}>
+            <div {...attributes} {...listeners} className="text-gray-500 cursor-grab active:cursor-grabbing p-1">
+                {/* Grip Icon */}
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 6h.01" /><path d="M8 12h.01" /><path d="M8 18h.01" /><path d="M16 6h.01" /><path d="M16 12h.01" /><path d="M16 18h.01" /></svg>
+            </div>
+            <span className={`text-xs font-mono w-4 text-center ${isCurrent ? 'text-indigo-400 animate-pulse' : 'text-gray-600'}`}>
+                {index + 1}
+            </span>
+            <div className="flex-1 min-w-0">
+                <div className={`text-sm font-medium truncate ${isCurrent ? 'text-indigo-300' : 'text-gray-200'}`}>{item.title}</div>
+                <div className="flex items-center gap-2 mt-0.5">
+                    <span className="text-xs text-gray-500 truncate max-w-[120px]">{item.author}</span>
+                    {item.addedBy && <span className="text-[10px] bg-gray-700 px-1.5 rounded text-gray-400">by {item.addedBy.name}</span>}
+                </div>
+            </div>
+        </li>
+    );
+};
 
 export default function RemotePage() {
     const router = useRouter();
@@ -18,6 +60,17 @@ export default function RemotePage() {
     // Guest Auth
     const [guestName, setGuestName] = useState<string>('');
     const [showNameModal, setShowNameModal] = useState(false);
+
+    // DND Sensors (Prioritize Touch)
+    const sensors = useSensors(
+        useSensor(TouchSensor, {
+            // Require press of 100ms to start drag (prevent accidental scroll blocks)
+            activationConstraint: {
+                delay: 150,
+                tolerance: 5,
+            },
+        })
+    );
 
     // Search State
     const [isSearchOpen, setSearchOpen] = useState(false);
@@ -154,6 +207,7 @@ export default function RemotePage() {
     };
 
     const handleAdd = (video: any) => {
+        // ... existing handleAdd code ...
         // Convert Search Result to Video Type
         const videoItem = {
             videoId: video.videoId,
@@ -169,6 +223,26 @@ export default function RemotePage() {
         setSearchResults([]);
         // Feedback
         alert(`Added "${video.title}" to queue!`);
+    };
+
+    const handleDragEnd = (event: DragEndEvent) => {
+        const { active, over } = event;
+        if (active.id !== over?.id) {
+            setQueue((items) => {
+                const oldIndex = items.findIndex((i: any) => (i.uuid || i.key || items.indexOf(i)) == active.id);
+                const newIndex = items.findIndex((i: any) => (i.uuid || i.key || items.indexOf(i)) == over?.id);
+
+                if (oldIndex !== -1 && newIndex !== -1) {
+                    const newOrder = arrayMove(items, oldIndex, newIndex);
+                    // Send Reorder Command
+                    // We must filter out "undefined" or weird objects before sending? 
+                    // No, arrayMove preserves objects. Just send.
+                    sendCommand('REORDER_QUEUE', { queue: newOrder });
+                    return newOrder;
+                }
+                return items;
+            });
+        }
     };
 
     if (!roomCode) return <div className="p-10 text-center">No Room Code Provided</div>;
@@ -231,23 +305,27 @@ export default function RemotePage() {
                         <p className="text-xs">Add a song to start the party!</p>
                     </div>
                 ) : (
-                    <ul className="space-y-3">
-                        {queue.map((item, idx) => (
-                            <li key={idx} className={`p-3 rounded-lg flex gap-3 items-center ${idx === (hostStatus as any).currentIndex ? 'bg-indigo-900/30 border border-indigo-500/30' : 'bg-gray-800/30'}`}>
-                                <span className={`text-xs font-mono w-4 text-center ${idx === (hostStatus as any).currentIndex ? 'text-indigo-400 animate-pulse' : 'text-gray-600'}`}>
-                                    {idx + 1}
-                                </span>
-                                <div className="flex-1 min-w-0">
-                                    <div className={`text-sm font-medium truncate ${idx === (hostStatus as any).currentIndex ? 'text-indigo-300' : 'text-gray-200'}`}>{item.title}</div>
-                                    <div className="flex items-center gap-2 mt-0.5">
-                                        <span className="text-xs text-gray-500 truncate max-w-[120px]">{item.author}</span>
-                                        {/* Placeholder for future Added By */}
-                                        {/* <span className="text-[10px] bg-gray-700 px-1.5 rounded text-gray-400">by {item.addedBy?.name || 'Guest'}</span> */}
-                                    </div>
-                                </div>
-                            </li>
-                        ))}
-                    </ul>
+                    <DndContext
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        onDragEnd={handleDragEnd}
+                    >
+                        <SortableContext
+                            items={queue.map((i: any) => i.uuid || queue.indexOf(i))} // Must match id in useSortable
+                            strategy={verticalListSortingStrategy}
+                        >
+                            <ul className="space-y-3">
+                                {queue.map((item, idx) => (
+                                    <SortableRemoteItem
+                                        key={item.uuid || idx}
+                                        item={item}
+                                        index={idx}
+                                        isCurrent={idx === (hostStatus as any).currentIndex}
+                                    />
+                                ))}
+                            </ul>
+                        </SortableContext>
+                    </DndContext>
                 )}
             </div>
 
