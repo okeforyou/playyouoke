@@ -393,7 +393,9 @@ export function CastProvider({ children }: { children: ReactNode }) {
       const castVideos = storeQueue.map(item => ({
         videoId: item.videoId,
         title: item.title || 'Unknown',
-        // If needed, pass other metadata
+        author: item.author,
+        addedBy: item.addedBy, // Pass through social info
+        thumbnail: item.thumbnail
       }));
 
       // Detect if this is just an index change or a queue change?

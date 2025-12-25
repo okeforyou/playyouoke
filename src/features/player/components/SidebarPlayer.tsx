@@ -52,7 +52,46 @@ export const SidebarPlayer = () => {
         console.log("🔍 SidebarPlayer Limits Updated:", { userRole, maxDuration, showAds, configLoaded: !!config });
     }, [userRole, maxDuration, showAds, config]);
 
-    // ... (rest of onReady, onStateChange, etc) ...
+    const opts = {
+        height: "100%",
+        width: "100%",
+        playerVars: {
+            autoplay: 1 as 0 | 1,
+            controls: 0 as 0 | 1, // Hide default controls
+            modestbranding: 1 as const,
+        },
+    };
+
+    const onReady = (event: any) => {
+        playerRef.current = event.target;
+        // Register this player instance with the adapter
+        const adapter = playerService.getAdapter();
+        if (adapter instanceof YouTubeAdapter) {
+            adapter.setPlayer(event.target);
+        }
+    };
+
+    const onStateChange = (event: any) => {
+        // 0 = Ended, 1 = Playing, 2 = Paused
+        if (event.data === 0) {
+            console.log("🎬 Video ended, playing next...");
+            usePlayerStore.getState().playNext();
+        }
+    };
+
+    // ⏱️ Enforce Duration Limit
+    useEffect(() => {
+        if (!playerRef.current || !isPlaying || maxDuration === 0) return;
+
+        const interval = setInterval(() => {
+            const currentTime = playerRef.current.getCurrentTime();
+            if (currentTime >= maxDuration) {
+                console.log(`⏱️ Time limit reached (${maxDuration}s). Skipping...`);
+                usePlayerStore.getState().playNext();
+            }
+        }, 1000);
+        return () => clearInterval(interval);
+    }, [isPlaying, maxDuration, currentSource]);
 
     return (
         <div className="w-full h-full relative group">
@@ -95,6 +134,16 @@ export const SidebarPlayer = () => {
                     <span>📊 Quota: {localStorage.getItem(`daily_songs_${new Date().toISOString().split('T')[0]}`) || 0}/{maxDailySongs}</span>
                 </div>
             )}
+
+            {/* Added By Toast (Optional - shows who requested current song) */}
+            <div className="absolute bottom-2 left-2 z-20">
+                {/* We need access to the current queue item to see who added it. 
+                    The store has `currentVideo` which should have `addedBy`. 
+                    Let's check if we can access it from here easily. 
+                    Actually SidebarPlayer uses `currentSource` (ID). 
+                    Let's rely on the Store's `currentVideo` if available.
+                */}
+            </div>
 
         </div>
     );

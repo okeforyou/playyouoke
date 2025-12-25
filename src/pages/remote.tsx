@@ -10,10 +10,14 @@ export default function RemotePage() {
     const { room: roomCode } = router.query;
 
     // State
-    const [status, setStatus] = useState<'connecting' | 'connected' | 'error'>('connecting');
+    const [status, setStatus] = useState<'connecting' | 'connected' | 'error' | 'monitor-mode'>('connecting');
     const [queue, setQueue] = useState<QueueItem[]>([]);
     const [nowPlaying, setNowPlaying] = useState<QueueItem | null>(null);
     const [hostStatus, setHostStatus] = useState({ isPlaying: false, isMuted: false });
+
+    // Guest Auth
+    const [guestName, setGuestName] = useState<string>('');
+    const [showNameModal, setShowNameModal] = useState(false);
 
     // Search State
     const [isSearchOpen, setSearchOpen] = useState(false);
@@ -23,23 +27,41 @@ export default function RemotePage() {
     const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout | null>(null);
 
     useEffect(() => {
+        // Load name from storage on mount
+        const storedName = localStorage.getItem('youoke_guest_name');
+        if (storedName) {
+            setGuestName(storedName);
+        } else {
+            setShowNameModal(true);
+        }
+    }, []);
+
+    useEffect(() => {
         if (!roomCode || typeof roomCode !== 'string') return;
+        if (showNameModal) return; // Wait for name
 
         const connect = async () => {
             if (!auth) {
                 setStatus('error');
                 return;
             }
-            if (!auth.currentUser) await signInAnonymously(auth);
+            // Use existing auth if available (e.g. if they logged in before)
+            // But we prefer anonymous for guests.
+            if (!auth.currentUser) {
+                try {
+                    await signInAnonymously(auth);
+                } catch (e) {
+                    console.error("Auth failed", e);
+                    setStatus('error');
+                    return;
+                }
+            }
 
             // Start Sync Loop
-            // NOTE: We are using POLLING to avoid stack overflows from the legacy bug
-            // In V2, we are using /antigravity_rooms/, so we are technically safe from the recursion bug
-            // But let's stick to polling for consistency with the CastService design we just built.
-
             const dbURL = realtimeDb.app.options.databaseURL;
 
-            setInterval(async () => {
+            // Poll for room state
+            const syncInterval = setInterval(async () => {
                 try {
                     const res = await fetch(`${dbURL}/antigravity_rooms/${roomCode}/state.json`);
                     const data = await res.json();
@@ -48,15 +70,27 @@ export default function RemotePage() {
                         setQueue(data.queue || []);
                         setNowPlaying(data.currentVideo);
                         setHostStatus(data.controls || {});
+                    } else {
+                        // Room might not exist yet or empty
                     }
                 } catch (e) {
                     console.error('Remote Sync Error:', e);
                 }
-            }, 1000);
+            }, 2000); // Poll every 2s to save bandwidth
+
+            return () => clearInterval(syncInterval);
         };
 
         connect();
-    }, [roomCode]);
+    }, [roomCode, showNameModal]); // Re-run when name is set
+
+    const handleSaveName = (name: string) => {
+        if (!name.trim()) return;
+        const finalName = name.trim().slice(0, 15); // Limit length
+        localStorage.setItem('youoke_guest_name', finalName);
+        setGuestName(finalName);
+        setShowNameModal(false);
+    };
 
     const sendCommand = async (type: string, payload: any = {}) => {
         if (!roomCode || !auth.currentUser) return;
@@ -67,11 +101,21 @@ export default function RemotePage() {
             const token = await auth.currentUser.getIdToken();
             const cmdId = Date.now().toString();
 
+            // Enrich payload with Guest Info
+            const enrichedPayload = {
+                ...payload,
+                addedBy: {
+                    uid: auth.currentUser.uid,
+                    name: guestName || 'Anonymous',
+                }
+            };
+
             const commandEnvelope = {
-                command: { type, payload },
+                command: { type, payload: enrichedPayload },
                 status: 'pending',
                 timestamp: Date.now(),
-                senderId: auth.currentUser.uid
+                senderId: auth.currentUser.uid,
+                senderName: guestName // Include at top level too
             };
 
             await fetch(`${dbURL}/antigravity_rooms/${roomCode}/commands/${cmdId}.json?auth=${token}`, {
@@ -118,70 +162,88 @@ export default function RemotePage() {
             // Remote doesn't strictly need thumbnails but good to have
             // The API returns videoThumbnails array
         };
+        // Just send the video, the 'addedBy' logic is in sendCommand now
         sendCommand('ADD_TO_QUEUE', { video: videoItem });
         setSearchOpen(false);
         setSearchTerm('');
         setSearchResults([]);
+        // Feedback
+        alert(`Added "${video.title}" to queue!`);
     };
 
     if (!roomCode) return <div className="p-10 text-center">No Room Code Provided</div>;
     if (status === 'error') return <div className="p-10 text-center text-red-500">Connection Failed (Auth Error)</div>;
 
     return (
-        <div className="flex flex-col h-screen bg-gray-900 text-white">
+        <div className="flex flex-col h-screen bg-gray-900 text-white font-sans">
             {/* Header */}
-            <div className="p-4 border-b border-gray-800 flex justify-between items-center bg-gray-900 sticky top-0 z-10">
-                <div>
-                    <span className="text-xs text-green-400 font-mono block">CONNECTED</span>
-                    <h1 className="text-xl font-bold">Room {roomCode}</h1>
+            <div className="px-4 py-3 border-b border-gray-800 flex justify-between items-center bg-gray-900 sticky top-0 z-10 shadow-md">
+                <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                    <div>
+                        <h1 className="text-sm font-bold leading-none">Review Room: {roomCode}</h1>
+                        <span className="text-xs text-gray-400">👋 {guestName}</span>
+                    </div>
                 </div>
-                <div className="text-xs text-gray-400">
+                <div className="text-xs bg-gray-800 px-2 py-1 rounded">
                     {queue.length} Songs
                 </div>
             </div>
 
-            {/* Now Playing */}
-            <div className="p-6 flex flex-col items-center justify-center bg-gradient-to-b from-gray-800 to-gray-900">
+            {/* Now Playing Card */}
+            <div className="p-4 flex flex-col items-center justify-center bg-gradient-to-b from-indigo-900/20 to-gray-900">
                 {nowPlaying ? (
-                    <>
-                        <div className="w-32 h-32 bg-gray-700 rounded-lg overflow-hidden mb-4 shadow-2xl relative">
-                            {/* Placeholder for thumbnail since we might not have it or it's just ID */}
-                            <div className="absolute inset-0 flex items-center justify-center text-4xl">🎵</div>
-                            {/* If we had thumbnail URL in Video type, we'd use it */}
+                    <div className="w-full max-w-sm bg-gray-800/50 rounded-xl p-4 flex gap-4 items-center backdrop-blur-sm border border-white/5">
+                        <div className="w-16 h-16 bg-gray-700 rounded-lg overflow-hidden shadow-lg shrink-0 flex items-center justify-center">
+                            <span className="text-2xl">📀</span>
                         </div>
-                        <h2 className="text-lg font-bold text-center line-clamp-2">{nowPlaying.title}</h2>
-                        <p className="text-sm text-gray-400 mt-1">{nowPlaying.author}</p>
-                    </>
+                        <div className="min-w-0">
+                            <h2 className="text-sm font-bold line-clamp-2 text-white">{nowPlaying.title}</h2>
+                            <p className="text-xs text-gray-400 mt-1 truncate">{nowPlaying.author}</p>
+                            {/* Show who added this tracking if available (needs backend support first) */}
+                            {/* <p className="text-[10px] text-indigo-400 mt-1">Requested by {nowPlaying.addedBy?.name}</p> */}
+                        </div>
+                    </div>
                 ) : (
-                    <div className="text-gray-500">Nothing Playing</div>
+                    <div className="text-gray-500 text-sm py-4">Waiting for music...</div>
                 )}
             </div>
 
-            {/* Controls */}
-            <div className="p-4 flex justify-center items-center gap-6 border-b border-gray-800 pb-6">
-                <button onClick={() => sendCommand('PREVIOUS')} className="p-3 bg-gray-800 rounded-full active:scale-95 transition"><BackwardIcon className="w-6 h-6" /></button>
+            {/* Controls (Host Only? For now let everyone control for fun) */}
+            <div className="px-4 pb-6 flex justify-center items-center gap-6">
+                <button onClick={() => sendCommand('PREVIOUS')} className="p-3 bg-gray-800 rounded-full active:scale-90 transition shadow-lg"><BackwardIcon className="w-6 h-6 text-gray-300" /></button>
                 <button
                     onClick={() => sendCommand(hostStatus.isPlaying ? 'PAUSE' : 'PLAY')}
-                    className="p-5 bg-primary rounded-full shadow-lg active:scale-95 transition hover:bg-red-600"
+                    className="p-5 bg-indigo-600 rounded-full shadow-xl shadow-indigo-600/30 active:scale-90 transition hover:bg-indigo-500"
                 >
-                    {hostStatus.isPlaying ? <PauseIcon className="w-8 h-8" /> : <PlayIcon className="w-8 h-8" />}
+                    {hostStatus.isPlaying ? <PauseIcon className="w-8 h-8 text-white" /> : <PlayIcon className="w-8 h-8 text-white" />}
                 </button>
-                <button onClick={() => sendCommand('NEXT')} className="p-3 bg-gray-800 rounded-full active:scale-95 transition"><ForwardIcon className="w-6 h-6" /></button>
+                <button onClick={() => sendCommand('NEXT')} className="p-3 bg-gray-800 rounded-full active:scale-90 transition shadow-lg"><ForwardIcon className="w-6 h-6 text-gray-300" /></button>
             </div>
 
-            {/* Queue */}
-            <div className="flex-1 overflow-y-auto p-4 bg-gray-900">
-                <h3 className="font-bold text-sm text-gray-500 uppercase tracking-wider mb-3">Up Next</h3>
+            {/* Queue List */}
+            <div className="flex-1 overflow-y-auto px-4 pb-20 bg-gray-900">
+                <h3 className="font-bold text-xs text-gray-500 uppercase tracking-wider mb-3 sticky top-0 bg-gray-900 py-2 z-10">Up Next</h3>
                 {queue.length === 0 ? (
-                    <p className="text-center text-gray-600 py-10">Queue is empty</p>
+                    <div className="flex flex-col items-center justify-center py-10 opacity-50">
+                        <span className="text-4xl mb-2">👻</span>
+                        <p className="text-sm">Queue is empty</p>
+                        <p className="text-xs">Add a song to start the party!</p>
+                    </div>
                 ) : (
-                    <ul className="space-y-2">
+                    <ul className="space-y-3">
                         {queue.map((item, idx) => (
-                            <li key={idx} className={`p-3 rounded bg-gray-800/50 flex gap-3 items-center ${idx === (hostStatus as any).currentIndex ? 'border-l-4 border-green-500' : ''}`}>
-                                <span className="text-gray-500 font-mono text-xs w-4">{idx + 1}</span>
+                            <li key={idx} className={`p-3 rounded-lg flex gap-3 items-center ${idx === (hostStatus as any).currentIndex ? 'bg-indigo-900/30 border border-indigo-500/30' : 'bg-gray-800/30'}`}>
+                                <span className={`text-xs font-mono w-4 text-center ${idx === (hostStatus as any).currentIndex ? 'text-indigo-400 animate-pulse' : 'text-gray-600'}`}>
+                                    {idx + 1}
+                                </span>
                                 <div className="flex-1 min-w-0">
-                                    <div className="font-medium truncate">{item.title}</div>
-                                    <div className="text-xs text-gray-400 truncate">{item.author}</div>
+                                    <div className={`text-sm font-medium truncate ${idx === (hostStatus as any).currentIndex ? 'text-indigo-300' : 'text-gray-200'}`}>{item.title}</div>
+                                    <div className="flex items-center gap-2 mt-0.5">
+                                        <span className="text-xs text-gray-500 truncate max-w-[120px]">{item.author}</span>
+                                        {/* Placeholder for future Added By */}
+                                        {/* <span className="text-[10px] bg-gray-700 px-1.5 rounded text-gray-400">by {item.addedBy?.name || 'Guest'}</span> */}
+                                    </div>
                                 </div>
                             </li>
                         ))}
@@ -192,48 +254,85 @@ export default function RemotePage() {
             {/* FAB to Add Songs */}
             <button
                 onClick={() => setSearchOpen(true)}
-                className="fixed bottom-8 right-6 w-14 h-14 bg-indigo-600 rounded-full shadow-2xl shadow-indigo-600/40 flex items-center justify-center text-3xl active:scale-90 transition z-20 hover:bg-indigo-500"
+                className="fixed bottom-6 right-6 w-14 h-14 bg-indigo-600 rounded-full shadow-2xl shadow-indigo-600/50 flex items-center justify-center text-3xl active:scale-90 transition z-20 hover:bg-indigo-500 ring-2 ring-indigo-400/50"
             >
-                <span className="mb-1">+</span>
+                <span className="mb-1 text-white">+</span>
             </button>
+
+            {/* Name Entry Modal */}
+            {showNameModal && (
+                <div className="fixed inset-0 bg-black/95 z-[60] flex items-center justify-center p-4 animate-in fade-in duration-300">
+                    <div className="w-full max-w-xs bg-gray-900 p-6 rounded-2xl border border-gray-800 shadow-2xl text-center">
+                        <div className="w-16 h-16 bg-gray-800 rounded-full mx-auto mb-4 flex items-center justify-center text-3xl animate-bounce">
+                            🎤
+                        </div>
+                        <h2 className="text-xl font-bold mb-2">Join the Party!</h2>
+                        <p className="text-gray-400 text-sm mb-6">Enter your nickname to start requesting songs.</p>
+
+                        <form onSubmit={(e) => { e.preventDefault(); handleSaveName((e.target as any).nickname.value); }}>
+                            <input
+                                name="nickname"
+                                autoFocus
+                                type="text"
+                                placeholder="Your Name (e.g. DJ Jo)"
+                                className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-center text-white mb-4 focus:ring-2 focus:ring-indigo-500 outline-none text-lg"
+                                maxLength={15}
+                            />
+                            <button type="submit" className="w-full btn btn-primary rounded-xl text-lg font-bold">
+                                Let's go! 🚀
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            )}
 
             {/* Search Modal */}
             {isSearchOpen && (
-                <div className="fixed inset-0 bg-black/90 z-50 flex flex-col animate-in fade-in duration-200">
-                    <div className="p-4 flex gap-3 items-center border-b border-gray-800">
-                        <button onClick={() => setSearchOpen(false)} className="text-gray-400 hover:text-white">Close</button>
+                <div className="fixed inset-0 bg-gray-900 z-50 flex flex-col animate-in slide-in-from-bottom duration-200">
+                    <div className="p-4 flex gap-3 items-center border-b border-gray-800 bg-gray-900">
+                        <button onClick={() => setSearchOpen(false)} className="text-gray-400 hover:text-white p-2">
+                            ✕
+                        </button>
                         <input
                             autoFocus
                             type="text"
-                            placeholder="Type a song name..."
-                            className="flex-1 bg-gray-800 border-none rounded-full px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none text-white placeholder-gray-500"
+                            placeholder="Search YouTube..."
+                            className="flex-1 bg-gray-800 border-none rounded-full px-5 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none text-white placeholder-gray-500 transition-all"
                             value={searchTerm}
                             onChange={(e) => handleSearch(e.target.value)}
                         />
                     </div>
 
-                    <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+                    <div className="flex-1 overflow-y-auto p-4 custom-scrollbar bg-gray-900">
                         {isSearching ? (
-                            <div className="flex justify-center py-10"><div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div></div>
+                            <div className="flex flex-col items-center justify-center py-20 gap-3">
+                                <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                                <span className="text-xs text-gray-500">Searching...</span>
+                            </div>
                         ) : searchResults.length > 0 ? (
                             <div className="space-y-4">
                                 {searchResults.map((video) => (
-                                    <div key={video.videoId} onClick={() => handleAdd(video)} className="flex gap-3 items-center active:opacity-70 cursor-pointer">
-                                        <div className="w-16 h-9 bg-gray-700 rounded overflow-hidden shrink-0">
-                                            <img src={video.videoThumbnails?.[0]?.url || `https://i.ytimg.com/vi/${video.videoId}/default.jpg`} className="w-full h-full object-cover" />
+                                    <div key={video.videoId} onClick={() => handleAdd(video)} className="flex gap-4 items-center active:opacity-60 cursor-pointer p-2 rounded-lg hover:bg-gray-800/50 transition">
+                                        <div className="w-24 h-14 bg-gray-800 rounded-md overflow-hidden shrink-0 shadow-sm relative group">
+                                            <img src={video.videoThumbnails?.[0]?.url || `https://i.ytimg.com/vi/${video.videoId}/default.jpg`} className="w-full h-full object-cover group-hover:scale-110 transition duration-500" />
                                         </div>
-                                        <div className="min-w-0 flex-1 border-b border-gray-800 pb-4">
-                                            <div className="text-sm font-medium text-white truncate">{video.title}</div>
-                                            <div className="text-xs text-gray-400">{video.author}</div>
+                                        <div className="min-w-0 flex-1">
+                                            <div className="text-sm font-semibold text-white line-clamp-2 leading-tight">{video.title}</div>
+                                            <div className="text-xs text-gray-400 mt-1">{video.author}</div>
                                         </div>
-                                        <button className="text-xs bg-gray-800 px-3 py-1 rounded-full text-gray-300">Add</button>
+                                        <button className="w-8 h-8 flex items-center justify-center bg-gray-800 rounded-full text-indigo-400 border border-gray-700 shadow-sm">
+                                            +
+                                        </button>
                                     </div>
                                 ))}
                             </div>
                         ) : searchTerm ? (
-                            <div className="text-center text-gray-500 py-10">No results found</div>
+                            <div className="text-center text-gray-500 py-20">No results found</div>
                         ) : (
-                            <div className="text-center text-gray-600 py-10">Type to search YouTube</div>
+                            <div className="text-center text-gray-600 py-20 flex flex-col items-center">
+                                <span className="text-4xl mb-3">🎹</span>
+                                <p>Search for your favorite songs</p>
+                            </div>
                         )}
                     </div>
                 </div>
