@@ -225,6 +225,24 @@ export default function RemotePage() {
         alert(`Added "${video.title}" to queue!`);
     };
 
+    const handleControls = (action: 'play' | 'pause' | 'next' | 'previous') => {
+        // 📳 Haptic Feedback (Vibrate 10ms)
+        if (navigator.vibrate) navigator.vibrate(10);
+
+        // ⚡ Optimistic UI Update (Instant feedback)
+        if (action === 'play' || action === 'pause') {
+            setHostStatus((prev: any) => ({
+                ...prev,
+                controls: {
+                    ...prev.controls,
+                    isPlaying: action === 'play'
+                }
+            }));
+        }
+
+        const cmd = action.toUpperCase();
+        sendCommand(cmd);
+    };
     const handleDragEnd = (event: DragEndEvent) => {
         const { active, over } = event;
         if (active.id !== over?.id) {
