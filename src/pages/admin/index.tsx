@@ -23,20 +23,24 @@ export default function AdminDashboard() {
             {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 {stats.map((stat, i) => (
-                    <div key={i} className="card bg-base-100 shadow-xl border border-base-200 hover:border-primary/50 transition-all duration-300">
-                        <div className="card-body p-6">
-                            <div className="flex justify-between items-start">
-                                <div>
-                                    <p className="text-xs font-bold text-base-content/50 uppercase tracking-widest">{stat.title}</p>
-                                    <h3 className="text-3xl font-black mt-2">{stat.value}</h3>
-                                </div>
-                                <div className="p-3 bg-base-200 rounded-xl">
-                                    {stat.icon}
-                                </div>
+                    <div key={i} className="rounded-sm border border-stroke bg-white py-6 px-7.5 shadow-default dark:border-strokedark dark:bg-boxdark transition-all hover:shadow-md">
+                        <div className="flex h-11.5 w-11.5 items-center justify-center rounded-full bg-meta-2 dark:bg-meta-4 mb-4">
+                            <div className="text-primary dark:text-white p-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-full">
+                                {stat.icon}
                             </div>
-                            <p className="text-xs text-base-content/60 mt-4 flex items-center gap-1">
+                        </div>
+
+                        <div className="mt-4 flex items-end justify-between">
+                            <div>
+                                <h4 className="text-title-md font-bold text-black dark:text-white text-2xl">
+                                    {stat.value}
+                                </h4>
+                                <span className="text-sm font-medium text-gray-500 dark:text-gray-400">{stat.title}</span>
+                            </div>
+
+                            <span className="flex items-center gap-1 text-sm font-medium text-emerald-500 bg-emerald-50 px-2 py-0.5 rounded-full">
                                 {stat.desc}
-                            </p>
+                            </span>
                         </div>
                     </div>
                 ))}
