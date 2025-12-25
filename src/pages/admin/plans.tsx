@@ -3,7 +3,7 @@ import Head from "next/head";
 import AdminLayout from "../../layouts/AdminLayout";
 import { useSystemConfig } from "../../hooks/useSystemConfig";
 import { updateSystemConfig, SystemConfig } from "../../services/systemConfigService";
-import { Shield, Zap, Radio, Globe, Tv, Check } from "lucide-react";
+import { Shield, Zap, Radio, Globe, Tv, Check, Save } from "lucide-react";
 
 export default function AdminPlansPage() {
     const { config, loading } = useSystemConfig();
@@ -184,39 +184,58 @@ export default function AdminPlansPage() {
                     </div>
                 </div>
 
-                {/* Premium Teaser / Future VVIP */}
-                <div className="rounded-sm border border-stroke bg-gradient-to-br from-primary to-[#70b1e3] text-white shadow-default h-full flex flex-col">
-                    <div className="border-b border-white/10 py-4 px-6.5">
+                {/* Premium Teaser / Future VVIP - Clean Design */}
+                <div className="rounded-sm border border-stroke bg-white shadow-default h-full flex flex-col">
+                    <div className="border-b border-stroke py-4 px-6.5">
                         <div className="flex items-center gap-2">
-                            <Shield size={20} className="text-white" />
-                            <h3 className="font-bold text-white">VVIP & Premium</h3>
+                            <div className="p-2 bg-primary/10 rounded text-primary">
+                                <Shield size={20} />
+                            </div>
+                            <h3 className="font-bold text-boxdark">VVIP & Premium</h3>
                         </div>
                     </div>
                     <div className="p-6.5 flex-1">
-                        <p className="mb-6 text-white/90">Premium tiers are currently <strong>Unlocked (Unlimited)</strong> by default until the payment gateway is fully integrated.</p>
+                        <div className="bg-primary/5 border border-primary/10 rounded-sm p-4 text-sm text-primary mb-6">
+                            ℹ️ Premium tiers are currently <strong>Unlocked (Unlimited)</strong> by default.
+                        </div>
 
-                        <div className="space-y-3">
-                            <div className="flex items-center gap-3 opacity-60">
-                                <Radio size={16} />
-                                <span>Unlimited Songs</span>
+                        <label className="mb-2.5 block text-black font-semibold">
+                            Included Features
+                        </label>
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-3 text-body">
+                                <div className="h-6 w-6 rounded-full bg-success/10 flex items-center justify-center text-success"><Check size={14} /></div>
+                                <span className="font-medium">Unlimited Songs</span>
                             </div>
-                            <div className="flex items-center gap-3 opacity-60">
-                                <Shield size={16} />
-                                <span>No Ads</span>
+                            <div className="flex items-center gap-3 text-body">
+                                <div className="h-6 w-6 rounded-full bg-success/10 flex items-center justify-center text-success"><Check size={14} /></div>
+                                <span className="font-medium">No Ads & Interruptions</span>
                             </div>
-                            <div className="flex items-center gap-3 opacity-60">
-                                <Zap size={16} />
-                                <span>Fast Queue</span>
+                            <div className="flex items-center gap-3 text-body">
+                                <div className="h-6 w-6 rounded-full bg-success/10 flex items-center justify-center text-success"><Check size={14} /></div>
+                                <span className="font-medium">Fast Queue Priority</span>
+                            </div>
+                            <div className="flex items-center gap-3 text-body">
+                                <div className="h-6 w-6 rounded-full bg-success/10 flex items-center justify-center text-success"><Check size={14} /></div>
+                                <span className="font-medium">Early Access to New Features</span>
                             </div>
                         </div>
                     </div>
-                    <div className="p-6.5 mt-auto">
+                    <div className="p-6.5 mt-auto border-t border-stroke bg-gray-2/50">
                         <button
                             onClick={handleSave}
                             disabled={saving}
-                            className="flex w-full justify-center rounded bg-white p-3 font-medium text-primary hover:bg-opacity-90 disabled:opacity-50"
+                            className="flex w-full items-center justify-center gap-2 rounded bg-primary p-3 font-medium text-white hover:bg-opacity-90 disabled:opacity-50 transition-all shadow-md shadow-primary/20"
                         >
-                            {saving ? 'Saving...' : 'SAVE CONFIGURATION'}
+                            {saving ? (
+                                <>
+                                    <span className="loading loading-spinner loading-sm"></span> Saving...
+                                </>
+                            ) : (
+                                <>
+                                    <Save size={18} /> SAVE CONFIGURATION
+                                </>
+                            )}
                         </button>
                     </div>
                 </div>
