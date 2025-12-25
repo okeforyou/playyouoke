@@ -191,7 +191,14 @@ export class CastService {
             case 'NEXT': store.playNext(); break;
             case 'PREVIOUS': store.playPrevious(); break;
             case 'ADD_TO_QUEUE':
-                if (command.payload?.video) store.addToQueue(command.payload.video);
+                if (command.payload?.video) {
+                    const videoToAdd = { ...command.payload.video };
+                    // Inject addedBy from the command envelope (or payload sibling)
+                    if (command.payload.addedBy) {
+                        videoToAdd.addedBy = command.payload.addedBy;
+                    }
+                    store.addToQueue(videoToAdd);
+                }
                 break;
             case 'SKIP_TO':
                 if (typeof command.payload?.index === 'number') store.setCurrentIndex(command.payload.index);

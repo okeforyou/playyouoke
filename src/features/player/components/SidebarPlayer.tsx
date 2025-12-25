@@ -108,6 +108,20 @@ export const SidebarPlayer = () => {
         return () => clearInterval(interval);
     }, [isPlaying, maxDuration, currentSource]);
 
+    // 🎵 Sync Play/Pause State with YouTube Player
+    useEffect(() => {
+        if (!playerRef.current) return;
+        try {
+            if (isPlaying) {
+                playerRef.current.playVideo();
+            } else {
+                playerRef.current.pauseVideo();
+            }
+        } catch (e) {
+            console.warn("Player control error:", e);
+        }
+    }, [isPlaying]);
+
     return (
         <div className="w-full h-full relative group">
             {/* YouTube Layer */}
