@@ -31,37 +31,37 @@ export default function AdminLayout({ children, headerTitle = "Admin Console" }:
     };
 
     return (
-        <div className="min-h-screen bg-[#F1F5F9] dark:bg-[#1a222c] font-sans text-slate-600 dark:text-slate-300 flex selection:bg-indigo-500 selection:text-white transition-colors duration-300">
+        <div className="min-h-screen bg-whiten font-sans text-body flex selection:bg-primary selection:text-white">
 
             {/* 
               SIDEBAR (Desktop) 
-              Style: Dark matte (Nexus style)
+              Style: White Clean (Nexus Ecommerce)
             */}
-            <aside className="hidden lg:flex flex-col w-72 h-screen bg-[#1C2434] text-white fixed top-0 left-0 z-50 transition-all duration-300">
+            <aside className="hidden lg:flex flex-col w-72 h-screen bg-white border-r border-stroke fixed top-0 left-0 z-50 transition-all duration-300">
                 {/* Logo Area */}
-                <div className="h-16 flex items-center px-6 gap-3 border-b border-gray-700/50">
-                    <div className="w-8 h-8 rounded bg-indigo-500 flex items-center justify-center text-white font-bold text-xl">Y</div>
-                    <div className="text-xl font-bold tracking-tight text-white">
-                        YouOke <span className="text-gray-400 font-normal text-sm">Admin</span>
+                <div className="h-20 flex items-center px-8 gap-3">
+                    <div className="w-8 h-8 rounded bg-primary flex items-center justify-center text-white font-bold text-xl">Y</div>
+                    <div className="text-2xl font-bold tracking-tight text-boxdark">
+                        YouOke <span className="text-body font-normal text-sm opacity-60">Admin</span>
                     </div>
                 </div>
 
                 {/* Menu Items */}
-                <div className="flex-1 overflow-y-auto py-6 px-4">
-                    <p className="px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Menu</p>
-                    <ul className="space-y-1">
+                <div className="flex-1 overflow-y-auto py-8 px-6">
+                    <p className="px-4 text-xs font-semibold text-bodydark2 uppercase tracking-wider mb-4">Menu</p>
+                    <ul className="space-y-2">
                         {menuItems.map((item) => {
                             const isActive = router.pathname === item.href;
                             return (
                                 <li key={item.href}>
                                     <Link
                                         href={item.href}
-                                        className={`flex items-center gap-3 px-4 py-3 rounded-md transition-all duration-200 font-medium ${isActive
-                                                ? 'bg-[#333A48] text-white'
-                                                : 'text-gray-400 hover:bg-[#333A48] hover:text-white'
+                                        className={`flex items-center gap-2.5 px-4 py-3 rounded-sm transition-all duration-200 font-medium ${isActive
+                                                ? 'bg-graydark text-white'
+                                                : 'text-body hover:bg-gray hover:text-boxdark'
                                             }`}
                                     >
-                                        <span className={isActive ? 'text-indigo-400' : ''}>{item.icon}</span>
+                                        <span className={isActive ? 'text-white' : ''}>{item.icon}</span>
                                         {item.name}
                                     </Link>
                                 </li>
@@ -71,8 +71,8 @@ export default function AdminLayout({ children, headerTitle = "Admin Console" }:
                 </div>
 
                 {/* Footer Actions */}
-                <div className="p-4 border-t border-gray-700/50">
-                    <button onClick={handleLogout} className="flex w-full items-center gap-3 px-4 py-3 rounded-md hover:bg-gray-700 text-gray-400 hover:text-white transition-all">
+                <div className="p-6 border-t border-stroke">
+                    <button onClick={handleLogout} className="flex w-full items-center gap-3 px-4 py-3 rounded-sm hover:bg-danger/10 text-body hover:text-danger transition-all">
                         <LogOut size={20} />
                         Sign Out
                     </button>
@@ -85,50 +85,52 @@ export default function AdminLayout({ children, headerTitle = "Admin Console" }:
             <div className="flex-1 flex flex-col min-w-0 lg:ml-72 transition-all duration-300">
 
                 {/* Navbar */}
-                <header className="sticky top-0 z-30 flex items-center justify-between h-16 px-6 bg-white dark:bg-[#24303F] shadow-sm transition-colors duration-300">
+                <header className="sticky top-0 z-30 flex items-center justify-between h-20 px-8 bg-white border-b border-stroke shadow-sm">
                     <div className="flex items-center gap-4 lg:hidden">
                         {/* Mobile Menu Trigger */}
                         <div className="dropdown">
                             <label tabIndex={0} className="btn btn-square btn-ghost btn-sm">
                                 <Menu size={20} />
                             </label>
-                            <ul tabIndex={0} className="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow-lg bg-white dark:bg-[#1C2434] rounded-box w-52 text-gray-500 dark:text-gray-300">
+                            <ul tabIndex={0} className="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow-lg bg-white rounded-box w-52 text-body">
                                 {menuItems.map((item) => (
                                     <li key={item.href}><Link href={item.href}>{item.name}</Link></li>
                                 ))}
                                 <div className="divider my-1"></div>
-                                <li><button onClick={handleLogout} className="text-red-500">Sign Out</button></li>
+                                <li><button onClick={handleLogout} className="text-danger">Sign Out</button></li>
                             </ul>
                         </div>
-                        <span className="font-bold text-lg text-gray-700 dark:text-white">Admin</span>
+                        <span className="font-bold text-lg text-boxdark">Admin</span>
                     </div>
 
                     {/* Header Right */}
                     <div className="flex items-center gap-6 ml-auto">
                         <div className="hidden md:flex flex-col items-end">
-                            <span className="text-sm font-semibold text-gray-700 dark:text-white">{user?.displayName || 'Administrator'}</span>
-                            <span className="text-xs text-gray-500">System Admin</span>
+                            <span className="text-sm font-semibold text-boxdark">{user?.displayName || 'Administrator'}</span>
+                            <span className="text-xs text-body">System Admin</span>
                         </div>
-                        <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden border border-gray-300 dark:border-gray-600">
-                            {user?.photoURL ? (
-                                <img src={user.photoURL} alt="User" />
-                            ) : (
-                                <div className="w-full h-full flex items-center justify-center text-gray-500 font-bold">{user?.email?.charAt(0).toUpperCase()}</div>
-                            )}
+                        <div className="h-12 w-12 rounded-full bg-gray overflow-hidden border border-stroke p-1">
+                            <div className="w-full h-full rounded-full overflow-hidden bg-white flex items-center justify-center">
+                                {user?.photoURL ? (
+                                    <img src={user.photoURL} alt="User" />
+                                ) : (
+                                    <div className="text-body font-bold text-lg">{user?.email?.charAt(0).toUpperCase()}</div>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </header>
 
                 {/* Content Viewport */}
-                <main className="flex-1 p-6 md:p-10 max-w-7xl mx-auto w-full">
+                <main className="flex-1 p-6 md:p-10 mx-auto w-full max-w-screen-2xl">
                     <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                        <h2 className="text-2xl font-bold text-gray-800 dark:text-white">
+                        <h2 className="text-title-md2 font-bold text-boxdark">
                             {headerTitle}
                         </h2>
                         <nav>
-                            <ol className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                            <ol className="flex items-center gap-2 text-sm text-body">
                                 <li>Dashboard /</li>
-                                <li className="text-indigo-500 font-medium">Overview</li>
+                                <li className="text-primary font-medium">{headerTitle}</li>
                             </ol>
                         </nav>
                     </div>

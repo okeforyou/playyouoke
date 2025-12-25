@@ -3,12 +3,13 @@ import Head from "next/head";
 import AdminLayout from "../../layouts/AdminLayout";
 import { useSystemConfig } from "../../hooks/useSystemConfig";
 import { updateSystemConfig, SystemConfig } from "../../services/systemConfigService";
-import { Shield, Zap, Radio, Globe, Tv, Clock, Music } from "lucide-react";
+import { Shield, Zap, Radio, Globe, Tv, Check } from "lucide-react";
 
 export default function AdminPlansPage() {
     const { config, loading } = useSystemConfig();
     const [formConfig, setFormConfig] = useState<SystemConfig | null>(null);
     const [saving, setSaving] = useState(false);
+    const [successMsg, setSuccessMsg] = useState("");
 
     useEffect(() => {
         if (!loading && config) {
@@ -21,10 +22,11 @@ export default function AdminPlansPage() {
         setSaving(true);
         try {
             await updateSystemConfig(formConfig);
-            alert("Configuration Saved Successfully ✅");
+            setSuccessMsg("Configuration saved successfully!");
+            setTimeout(() => setSuccessMsg(""), 3000);
         } catch (error) {
-            console.error("Save failed:", error);
-            alert("Save Failed ❌");
+            console.error("Failed to save config:", error);
+            alert("Failed to save settings");
         } finally {
             setSaving(false);
         }
@@ -44,11 +46,16 @@ export default function AdminPlansPage() {
         });
     };
 
+    // Skeleton Loader
     if (loading || !formConfig) {
         return (
-            <AdminLayout>
-                <div className="flex h-96 items-center justify-center">
-                    <span className="loading loading-bars loading-lg text-primary"></span>
+            <AdminLayout headerTitle="Plan Configuration">
+                <div className="animate-pulse space-y-6">
+                    <div className="h-12 bg-gray-200 rounded w-1/3"></div>
+                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                        <div className="h-96 bg-gray-200 rounded"></div>
+                        <div className="h-96 bg-gray-200 rounded"></div>
+                    </div>
                 </div>
             </AdminLayout>
         );
@@ -60,166 +67,159 @@ export default function AdminPlansPage() {
                 <title>Plans - YouOke Admin</title>
             </Head>
 
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-                {/* Intro Card */}
-                <div className="xl:col-span-2">
-                    <div className="alert bg-base-100 shadow-lg border border-base-200">
-                        <Shield className="stroke-primary" />
-                        <div>
-                            <h3 className="font-bold">Membership Access Rules</h3>
-                            <div className="text-xs">Configure what Free users can do vs Premium. Changes apply immediately.</div>
-                        </div>
-                    </div>
+            {/* Header / Success Toast */}
+            {successMsg && (
+                <div className="fixed top-24 right-8 z-50 bg-success text-white px-6 py-3 rounded shadow-lg flex items-center gap-2 animate-in fade-in slide-in-from-right">
+                    <Check size={20} />
+                    {successMsg}
                 </div>
+            )}
 
-                {/* Free Tier Editor */}
-                <div className="card bg-base-100 shadow-xl border border-warning/20">
-                    <div className="card-body">
-                        <div className="flex justify-between items-center mb-6">
-                            <h2 className="card-title text-2xl flex items-center gap-2">
-                                <div className="p-2 bg-warning/10 rounded-lg">
-                                    <Zap className="text-warning" size={24} />
-                                </div>
-                                Free Tier
-                            </h2>
-                            <div className="badge badge-outline">Default</div>
-                        </div>
-
-                        <div className="space-y-6">
-                            {/* Limits Section */}
-                            <div>
-                                <h4 className="text-xs font-bold uppercase tracking-widest text-base-content/50 mb-3">Hard Limits</h4>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="form-control bg-base-200 p-3 rounded-lg">
-                                        <label className="label">
-                                            <span className="label-text font-bold flex items-center gap-2">
-                                                <Music size={14} /> Max Songs/Day
-                                            </span>
-                                        </label>
-                                        <input
-                                            type="number"
-                                            value={formConfig.membership.free.max_daily_songs}
-                                            onChange={(e) => handleFreeChange('max_daily_songs', parseInt(e.target.value))}
-                                            className="input input-bordered input-sm"
-                                        />
-                                        <label className="label">
-                                            <span className="label-text-alt text-base-content/50">0 = Unlimited</span>
-                                        </label>
-                                    </div>
-
-                                    <div className="form-control bg-base-200 p-3 rounded-lg">
-                                        <label className="label">
-                                            <span className="label-text font-bold flex items-center gap-2">
-                                                <Clock size={14} /> Max Duration (s)
-                                            </span>
-                                        </label>
-                                        <div className="flex gap-2">
-                                            <input
-                                                type="number"
-                                                value={formConfig.membership.free.max_duration_sec}
-                                                onChange={(e) => handleFreeChange('max_duration_sec', parseInt(e.target.value))}
-                                                className="input input-bordered input-sm w-full"
-                                            />
-                                            <button
-                                                onClick={() => handleFreeChange('max_duration_sec', 45)}
-                                                className="btn btn-xs btn-outline"
-                                            >45s</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="divider"></div>
-
-                            {/* Features Section */}
-                            <div>
-                                <h4 className="text-xs font-bold uppercase tracking-widest text-base-content/50 mb-3">Feature Toggles</h4>
-                                <div className="space-y-3">
-                                    <div className="flex items-center justify-between p-3 bg-base-200 rounded-lg hover:bg-base-200/80 transition-colors">
-                                        <div className="flex items-center gap-3">
-                                            <div className="p-2 bg-base-100 rounded-md"><Tv size={16} /></div>
-                                            <div>
-                                                <div className="font-bold text-sm">Allow Chromecast</div>
-                                                <div className="text-xs opacity-60">Cast to Big Screen</div>
-                                            </div>
-                                        </div>
-                                        <input
-                                            type="checkbox"
-                                            className="toggle toggle-success"
-                                            checked={formConfig.membership.free.allow_cast}
-                                            onChange={(e) => handleFreeChange('allow_cast', e.target.checked)}
-                                        />
-                                    </div>
-
-                                    <div className="flex items-center justify-between p-3 bg-base-200 rounded-lg hover:bg-base-200/80 transition-colors">
-                                        <div className="flex items-center gap-3">
-                                            <div className="p-2 bg-base-100 rounded-md"><Radio size={16} /></div>
-                                            <div>
-                                                <div className="font-bold text-sm">Allow Remote</div>
-                                                <div className="text-xs opacity-60">Use Phone as Remote</div>
-                                            </div>
-                                        </div>
-                                        <input
-                                            type="checkbox"
-                                            className="toggle toggle-success"
-                                            checked={formConfig.membership.free.allow_remote}
-                                            onChange={(e) => handleFreeChange('allow_remote', e.target.checked)}
-                                        />
-                                    </div>
-
-                                    <div className="flex items-center justify-between p-3 bg-base-200 rounded-lg hover:bg-base-200/80 transition-colors border border-red-500/20">
-                                        <div className="flex items-center gap-3">
-                                            <div className="p-2 bg-base-100 rounded-md"><Globe size={16} className="text-red-500" /></div>
-                                            <div>
-                                                <div className="font-bold text-sm text-red-500">Show Ads</div>
-                                                <div className="text-xs opacity-60">Display Banner/Video Ads</div>
-                                            </div>
-                                        </div>
-                                        <input
-                                            type="checkbox"
-                                            className="toggle toggle-error"
-                                            checked={formConfig.membership.free.show_ads}
-                                            onChange={(e) => handleFreeChange('show_ads', e.target.checked)}
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Premium Teaser (Placeholder for VVIP logic) */}
-                <div className="card bg-gradient-to-br from-primary to-purple-800 text-primary-content shadow-xl shadow-primary/20">
-                    <div className="card-body">
-                        <h2 className="card-title text-2xl flex items-center gap-2">
-                            <div className="p-2 bg-white/20 rounded-lg">
-                                <Shield className="text-white" size={24} />
-                            </div>
-                            VVIP & Premium
-                        </h2>
-                        <p className="opacity-80 mt-4">Premium tiers are currently <b>Unlocked (Unlimited)</b> by default.</p>
-
-                        <div className="mt-8 space-y-2">
-                            <div className="flex items-center gap-2 opacity-50"><Shield size={16} /> Unlimited Songs</div>
-                            <div className="flex items-center gap-2 opacity-50"><Shield size={16} /> No Ads</div>
-                            <div className="flex items-center gap-2 opacity-50"><Shield size={16} /> Exclusive Badges</div>
-                        </div>
-
-                        <div className="card-actions justify-end mt-auto">
-                            <button className="btn btn-sm btn-outline text-white border-white/40 hover:bg-white hover:text-primary hover:border-white">Configure Premium (Coming Soon)</button>
-                        </div>
-                    </div>
+            <div className="mb-6 bg-white border border-stroke p-4 rounded-sm shadow-default flex items-center gap-4 text-boxdark">
+                <Shield className="text-primary" />
+                <div>
+                    <h3 className="font-bold">Membership Access Rules</h3>
+                    <p className="text-sm text-body">Configure what Free users can do vs Premium. Changes apply immediately.</p>
                 </div>
             </div>
 
-            {/* Sticky Save Bar */}
-            <div className={`fixed bottom-6 right-6 transition-all duration-300 transform ${saving ? 'translate-y-2' : ''}`}>
-                <button
-                    onClick={handleSave}
-                    className={`btn btn-primary shadow-2xl gap-2 px-8 ${saving ? 'loading' : ''}`}
-                >
-                    {saving ? 'Saving Changes...' : 'Save Configuration'}
-                </button>
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+
+                {/* Free Tier Editor */}
+                <div className="rounded-sm border border-stroke bg-white shadow-default">
+                    <div className="border-b border-stroke py-4 px-6.5">
+                        <div className="flex items-center gap-2">
+                            <div className="p-2 bg-yellow-50 rounded text-warning">
+                                <Zap size={20} />
+                            </div>
+                            <h3 className="font-bold text-boxdark">Free Tier Configuration</h3>
+                            <span className="text-xs bg-gray text-body px-2 py-1 rounded ml-auto">Default</span>
+                        </div>
+                    </div>
+
+                    <div className="p-6.5 space-y-6">
+                        {/* Limits Group */}
+                        <div>
+                            <label className="mb-2.5 block text-black dark:text-white font-semibold">
+                                Usage Limits
+                            </label>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <span className="mb-1 block text-sm text-body">Max Songs/Day (0 = Unlimited)</span>
+                                    <input
+                                        type="number"
+                                        value={formConfig.membership.free.max_daily_songs}
+                                        onChange={(e) => handleFreeChange('max_daily_songs', parseInt(e.target.value))}
+                                        className="w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none transition-colors"
+                                    />
+                                </div>
+                                <div>
+                                    <span className="mb-1 block text-sm text-body">Max Duration (s) per song</span>
+                                    <div className="relative">
+                                        <input
+                                            type="number"
+                                            value={formConfig.membership.free.max_duration_sec}
+                                            onChange={(e) => handleFreeChange('max_duration_sec', parseInt(e.target.value))}
+                                            className="w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none transition-colors"
+                                        />
+                                        <span className="absolute right-4 top-3 text-sm font-bold text-body opacity-50">SEC</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Toggles Group */}
+                        <div>
+                            <label className="mb-2.5 block text-black dark:text-white font-semibold pt-4 border-t border-stroke">
+                                Feature Access
+                            </label>
+                            <div className="space-y-4">
+                                {/* Chromecast */}
+                                <div className="flex items-center justify-between p-3 bg-gray rounded-sm border border-transparent hover:border-stroke transition-all">
+                                    <div className="flex items-center gap-3">
+                                        <Tv size={18} className="text-body" />
+                                        <div>
+                                            <p className="font-medium text-black">Allow Chromecast</p>
+                                            <p className="text-xs text-body">Cast to Big Screen</p>
+                                        </div>
+                                    </div>
+                                    <label className="flex cursor-pointer select-none items-center">
+                                        <div className="relative">
+                                            <input
+                                                type="checkbox"
+                                                className="sr-only"
+                                                checked={formConfig.membership.free.allow_cast}
+                                                onChange={(e) => handleFreeChange('allow_cast', e.target.checked)}
+                                            />
+                                            <div className={`block h-8 w-14 rounded-full ${formConfig.membership.free.allow_cast ? 'bg-primary' : 'bg-bodydark1'}`}></div>
+                                            <div className={`dot absolute left-1 top-1 h-6 w-6 rounded-full bg-white transition ${formConfig.membership.free.allow_cast ? '!translate-x-full !bg-white' : ''}`}></div>
+                                        </div>
+                                    </label>
+                                </div>
+
+                                {/* Remote */}
+                                <div className="flex items-center justify-between p-3 bg-gray rounded-sm border border-transparent hover:border-stroke transition-all">
+                                    <div className="flex items-center gap-3">
+                                        <Globe size={18} className="text-body" />
+                                        <div>
+                                            <p className="font-medium text-black">Allow Remote</p>
+                                            <p className="text-xs text-body">Use Phone as Remote</p>
+                                        </div>
+                                    </div>
+                                    <label className="flex cursor-pointer select-none items-center">
+                                        <div className="relative">
+                                            <input
+                                                type="checkbox"
+                                                className="sr-only"
+                                                checked={formConfig.membership.free.allow_remote}
+                                                onChange={(e) => handleFreeChange('allow_remote', e.target.checked)}
+                                            />
+                                            <div className={`block h-8 w-14 rounded-full ${formConfig.membership.free.allow_remote ? 'bg-primary' : 'bg-bodydark1'}`}></div>
+                                            <div className={`dot absolute left-1 top-1 h-6 w-6 rounded-full bg-white transition ${formConfig.membership.free.allow_remote ? '!translate-x-full !bg-white' : ''}`}></div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Premium Teaser / Future VVIP */}
+                <div className="rounded-sm border border-stroke bg-gradient-to-br from-primary to-[#70b1e3] text-white shadow-default h-full flex flex-col">
+                    <div className="border-b border-white/10 py-4 px-6.5">
+                        <div className="flex items-center gap-2">
+                            <Shield size={20} className="text-white" />
+                            <h3 className="font-bold text-white">VVIP & Premium</h3>
+                        </div>
+                    </div>
+                    <div className="p-6.5 flex-1">
+                        <p className="mb-6 text-white/90">Premium tiers are currently <strong>Unlocked (Unlimited)</strong> by default until the payment gateway is fully integrated.</p>
+
+                        <div className="space-y-3">
+                            <div className="flex items-center gap-3 opacity-60">
+                                <Radio size={16} />
+                                <span>Unlimited Songs</span>
+                            </div>
+                            <div className="flex items-center gap-3 opacity-60">
+                                <Shield size={16} />
+                                <span>No Ads</span>
+                            </div>
+                            <div className="flex items-center gap-3 opacity-60">
+                                <Zap size={16} />
+                                <span>Fast Queue</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="p-6.5 mt-auto">
+                        <button
+                            onClick={handleSave}
+                            disabled={saving}
+                            className="flex w-full justify-center rounded bg-white p-3 font-medium text-primary hover:bg-opacity-90 disabled:opacity-50"
+                        >
+                            {saving ? 'Saving...' : 'SAVE CONFIGURATION'}
+                        </button>
+                    </div>
+                </div>
             </div>
         </AdminLayout>
     );
