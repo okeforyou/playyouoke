@@ -186,13 +186,13 @@ export const SidebarPlayer = () => {
                             {currentVideo.addedBy.photoURL ? (
                                 <img src={currentVideo.addedBy.photoURL} className="w-full h-full rounded-full object-cover" />
                             ) : (
-                                <span>{(currentVideo.addedBy.name || currentVideo.addedBy.displayName || '?').charAt(0).toUpperCase()}</span>
+                                <span>{((currentVideo.addedBy as any).name || currentVideo.addedBy.displayName || '?').charAt(0).toUpperCase()}</span>
                             )}
                         </div>
                         <div className="flex flex-col">
                             <span className="text-[10px] text-indigo-300 font-bold uppercase tracking-wider leading-none mb-1">Requested By</span>
                             <span className="text-base font-bold text-white leading-none truncate max-w-[200px] drop-shadow-md">
-                                {currentVideo.addedBy.name || currentVideo.addedBy.displayName}
+                                {(currentVideo.addedBy as any).name || currentVideo.addedBy.displayName}
                             </span>
                         </div>
                     </div>
