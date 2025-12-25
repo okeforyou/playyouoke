@@ -121,12 +121,12 @@ export default function SearchResultGrid({
           {renderList?.map((rcm, i) => {
             return !rcm ? null : (
               <Fragment key={rcm.videoId}>
-                <label htmlFor="modal-video">
+                <div onClick={() => onClick(rcm)} className="cursor-pointer active:scale-[0.98] transition-transform">
                   <SearchResultHorizontalCard
                     video={rcm}
-                    onClick={() => onClick(rcm)}
+                    onClick={() => { }} // Handle click on wrapper
                   />
-                </label>
+                </div>
               </Fragment>
             );
           })}
@@ -150,8 +150,8 @@ export default function SearchResultGrid({
             return !rcm ? null : (
               <Fragment key={rcm.videoId}>
                 {/* The button to open modal */}
-                <label htmlFor="modal-video" onClick={() => onClick(rcm)}>
-                  <div className="card rounded-lg overflow-hidden bg-white shadow hover:shadow-md cursor-pointer flex flex-col h-full transition-shadow">
+                <div className="group h-full" onClick={() => onClick(rcm)}>
+                  <div className="card rounded-lg overflow-hidden bg-white shadow hover:shadow-md cursor-pointer flex flex-col h-full transition-transform active:scale-95 duration-100">
                     <figure className="relative w-full aspect-video flex-shrink-0">
                       <Image
                         unoptimized
@@ -166,17 +166,23 @@ export default function SearchResultGrid({
                         className="animate-pulse bg-gray-400 object-cover"
                         onLoad={(ev) => ev.currentTarget.classList.remove("animate-pulse")}
                       />
+                      {/* Play Overlay (Visible on Touch/Hover) */}
+                      <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                          <span className="text-black font-bold">▶</span>
+                        </div>
+                      </div>
                     </figure>
                     <div className="card-body p-2 gap-y-0 flex-1 flex flex-col">
-                      <h2 className="font-semibold text-xs sm:text-sm line-clamp-2 flex-1">
+                      <h2 className="font-semibold text-xs sm:text-sm line-clamp-2 flex-1 text-gray-800">
                         {rcm.title}
                       </h2>
-                      <h2 className="text-xs text-gray-400 truncate">
+                      <h2 className="text-xs text-gray-500 truncate">
                         {rcm.author}
                       </h2>
                     </div>
                   </div>
-                </label>
+                </div>
               </Fragment>
             );
           })}
