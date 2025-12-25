@@ -7,6 +7,7 @@ import { PlayIcon, PauseIcon, ForwardIcon, BackwardIcon } from '@heroicons/react
 import { DndContext, closestCenter, TouchSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { CATEGORIES } from '../data/categories';
 
 // Sortable Item Component
 const SortableRemoteItem = ({ item, index, isCurrent }: any) => {
@@ -181,7 +182,7 @@ export default function RemotePage() {
     };
 
     // Search Logic
-    const handleSearch = async (term: string) => {
+    const handleSearch = async (term: string, immediate = false) => {
         setSearchTerm(term);
         if (debounceTimer) clearTimeout(debounceTimer);
 
@@ -189,6 +190,8 @@ export default function RemotePage() {
             setSearchResults([]);
             return;
         }
+
+        const delay = immediate ? 0 : 800;
 
         const timer = setTimeout(async () => {
             setSearching(true);
@@ -202,7 +205,7 @@ export default function RemotePage() {
             } finally {
                 setSearching(false);
             }
-        }, 800);
+        }, delay);
         setDebounceTimer(timer);
     };
 
@@ -425,9 +428,24 @@ export default function RemotePage() {
                         ) : searchTerm ? (
                             <div className="text-center text-gray-500 py-20">No results found</div>
                         ) : (
-                            <div className="text-center text-gray-600 py-20 flex flex-col items-center">
-                                <span className="text-4xl mb-3">🎹</span>
-                                <p>Search for your favorite songs</p>
+                            <div className="pb-10">
+                                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4 px-1">Browse Categories</h3>
+                                <div className="grid grid-cols-2 gap-3">
+                                    {CATEGORIES.map((cat) => (
+                                        <button
+                                            key={cat.id}
+                                            onClick={() => handleSearch(cat.query, true)}
+                                            className={`relative h-24 rounded-xl overflow-hidden shadow-lg hover:scale-[1.02] active:scale-95 transition-all duration-200 bg-gradient-to-br ${cat.color} p-3 text-left`}
+                                        >
+                                            <span className="font-bold text-white text-lg leading-tight block w-2/3 shadow-black drop-shadow-md">
+                                                {cat.name}
+                                            </span>
+                                            <span className="absolute bottom-1 right-2 text-4xl transform rotate-12 opacity-90 drop-shadow-md">
+                                                {cat.icon}
+                                            </span>
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
                         )}
                     </div>
