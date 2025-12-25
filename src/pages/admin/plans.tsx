@@ -93,7 +93,7 @@ export default function AdminPlansPage() {
                                 <Zap size={20} />
                             </div>
                             <h3 className="font-bold text-boxdark">Free Tier Configuration</h3>
-                            <span className="text-xs bg-gray text-body px-2 py-1 rounded ml-auto">Default</span>
+                            <span className="text-xs bg-adm-gray text-body px-2 py-1 rounded ml-auto">Default</span>
                         </div>
                     </div>
 
@@ -110,7 +110,7 @@ export default function AdminPlansPage() {
                                         type="number"
                                         value={formConfig.membership.free.max_daily_songs}
                                         onChange={(e) => handleFreeChange('max_daily_songs', parseInt(e.target.value))}
-                                        className="w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none transition-colors"
+                                        className="w-full rounded border border-stroke bg-adm-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none transition-colors"
                                     />
                                 </div>
                                 <div>
@@ -120,7 +120,7 @@ export default function AdminPlansPage() {
                                             type="number"
                                             value={formConfig.membership.free.max_duration_sec}
                                             onChange={(e) => handleFreeChange('max_duration_sec', parseInt(e.target.value))}
-                                            className="w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none transition-colors"
+                                            className="w-full rounded border border-stroke bg-adm-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none transition-colors"
                                         />
                                         <span className="absolute right-4 top-3 text-sm font-bold text-body opacity-50">SEC</span>
                                     </div>
@@ -135,7 +135,7 @@ export default function AdminPlansPage() {
                             </label>
                             <div className="space-y-4">
                                 {/* Chromecast */}
-                                <div className="flex items-center justify-between p-3 bg-gray rounded-sm border border-transparent hover:border-stroke transition-all">
+                                <div className="flex items-center justify-between p-3 bg-adm-gray rounded-sm border border-transparent hover:border-stroke transition-all">
                                     <div className="flex items-center gap-3">
                                         <Tv size={18} className="text-body" />
                                         <div>
@@ -158,7 +158,7 @@ export default function AdminPlansPage() {
                                 </div>
 
                                 {/* Remote */}
-                                <div className="flex items-center justify-between p-3 bg-gray rounded-sm border border-transparent hover:border-stroke transition-all">
+                                <div className="flex items-center justify-between p-3 bg-adm-gray rounded-sm border border-transparent hover:border-stroke transition-all">
                                     <div className="flex items-center gap-3">
                                         <Globe size={18} className="text-body" />
                                         <div>
@@ -221,7 +221,7 @@ export default function AdminPlansPage() {
                             </div>
                         </div>
                     </div>
-                    <div className="p-6.5 mt-auto border-t border-stroke bg-gray-2/50">
+                    <div className="p-6.5 mt-auto border-t border-stroke bg-adm-gray-2/50">
                         <button
                             onClick={handleSave}
                             disabled={saving}

@@ -57,8 +57,8 @@ export default function AdminLayout({ children, headerTitle = "Admin Console" }:
                                     <Link
                                         href={item.href}
                                         className={`flex items-center gap-2.5 px-4 py-3 rounded-sm transition-all duration-200 font-medium ${isActive
-                                                ? 'bg-graydark text-white'
-                                                : 'text-body hover:bg-gray hover:text-boxdark'
+                                            ? 'bg-graydark text-white'
+                                            : 'text-body hover:bg-adm-gray hover:text-boxdark'
                                             }`}
                                     >
                                         <span className={isActive ? 'text-white' : ''}>{item.icon}</span>
@@ -109,7 +109,7 @@ export default function AdminLayout({ children, headerTitle = "Admin Console" }:
                             <span className="text-sm font-semibold text-boxdark">{user?.displayName || 'Administrator'}</span>
                             <span className="text-xs text-body">System Admin</span>
                         </div>
-                        <div className="h-12 w-12 rounded-full bg-gray overflow-hidden border border-stroke p-1">
+                        <div className="h-12 w-12 rounded-full bg-adm-gray overflow-hidden border border-stroke p-1">
                             <div className="w-full h-full rounded-full overflow-hidden bg-white flex items-center justify-center">
                                 {user?.photoURL ? (
                                     <img src={user.photoURL} alt="User" />
