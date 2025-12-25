@@ -302,8 +302,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
                     <span className="font-bold">Current Queue</span>
                     <button onClick={() => setQueueOpen(false)}><X /></button>
                 </div>
-                <div className="flex-1 overflow-y-auto p-8 text-center text-text-muted">
-                    Queue is empty
+                <div className="flex-1 overflow-y-auto bg-muted">
+                    <QueueList />
                 </div>
             </div>
 
