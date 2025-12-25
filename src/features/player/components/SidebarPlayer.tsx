@@ -136,14 +136,27 @@ export const SidebarPlayer = () => {
             )}
 
             {/* Added By Toast (Optional - shows who requested current song) */}
-            <div className="absolute bottom-2 left-2 z-20">
-                {/* We need access to the current queue item to see who added it. 
-                    The store has `currentVideo` which should have `addedBy`. 
-                    Let's check if we can access it from here easily. 
-                    Actually SidebarPlayer uses `currentSource` (ID). 
-                    Let's rely on the Store's `currentVideo` if available.
-                */}
-            </div>
+            {/* Added By Toast (Animated) */}
+            {currentSource && usePlayerStore.getState().currentVideo?.addedBy && (
+                <div className="absolute bottom-4 left-4 z-30 animate-in slide-in-from-left duration-700 fade-in fill-mode-both">
+                    <div className="flex items-center gap-3 bg-black/60 backdrop-blur-md border border-white/10 rounded-full pl-2 pr-5 py-2 shadow-2xl">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center text-lg shadow-inner">
+                            {/* Avatar or Initial */}
+                            {usePlayerStore.getState().currentVideo?.addedBy?.photoURL ? (
+                                <img src={usePlayerStore.getState().currentVideo?.addedBy?.photoURL} className="w-full h-full rounded-full" />
+                            ) : (
+                                <span>{usePlayerStore.getState().currentVideo?.addedBy?.displayName?.charAt(0).toUpperCase()}</span>
+                            )}
+                        </div>
+                        <div className="flex flex-col">
+                            <span className="text-[10px] text-gray-300 font-bold uppercase tracking-wider leading-none mb-1">Requested By</span>
+                            <span className="text-sm font-bold text-white leading-none truncate max-w-[150px]">
+                                {usePlayerStore.getState().currentVideo?.addedBy?.displayName}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            )}
 
         </div>
     );

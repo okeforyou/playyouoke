@@ -96,8 +96,33 @@ export const usePlayerStore = create<PlayerStore>()(
 
             playNext: () => {
                 const state = get();
-                if (state.currentIndex < state.queue.length - 1) {
-                    state.setCurrentIndex(state.currentIndex + 1);
+                // "Party Mode" logic: Remove played song to keep queue clean
+                if (state.queue.length > 0) {
+                    // Remove the current song (index 0 usually, but let's be safe)
+                    // Actually, if we just shift, index stays 0.
+                    // Let's remove the FIRST item if it matches current.
+                    const newQueue = state.queue.slice(1); // Remove top
+
+                    if (newQueue.length > 0) {
+                        // Play next one
+                        const nextVideo = newQueue[0];
+                        set({
+                            queue: newQueue,
+                            currentIndex: 0,
+                            currentVideo: nextVideo,
+                            currentSource: nextVideo.videoId,
+                            isPlaying: true
+                        });
+                    } else {
+                        // Queue finished
+                        set({
+                            queue: [],
+                            currentIndex: 0,
+                            currentVideo: null,
+                            currentSource: null,
+                            isPlaying: false
+                        });
+                    }
                 }
             },
 
