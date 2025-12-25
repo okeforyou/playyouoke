@@ -122,6 +122,19 @@ export const SidebarPlayer = () => {
         }
     }, [isPlaying]);
 
+    // 🍞 Toast Logic
+    const [showToast, setShowToast] = React.useState(false);
+
+    useEffect(() => {
+        if (currentSource && currentVideo?.addedBy) {
+            setShowToast(true);
+            const timer = setTimeout(() => setShowToast(false), 8000); // Hide after 8s
+            return () => clearTimeout(timer);
+        } else {
+            setShowToast(false);
+        }
+    }, [currentSource, currentVideo]);
+
     return (
         <div className="w-full h-full relative group">
             {/* YouTube Layer */}
@@ -164,23 +177,22 @@ export const SidebarPlayer = () => {
                 </div>
             )}
 
-            {/* Added By Toast (Optional - shows who requested current song) */}
             {/* Added By Toast (Animated) */}
-            {currentSource && currentVideo?.addedBy && (
-                <div className="absolute bottom-4 left-4 z-30 animate-in slide-in-from-left duration-700 fade-in fill-mode-both">
-                    <div className="flex items-center gap-3 bg-black/60 backdrop-blur-md border border-white/10 rounded-full pl-2 pr-5 py-2 shadow-2xl">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center text-lg shadow-inner">
+            {showToast && currentVideo?.addedBy && (
+                <div className={`absolute bottom-8 left-6 z-30 transition-all duration-700 ${showToast ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+                    <div className="flex items-center gap-4 bg-black/70 backdrop-blur-xl border border-white/10 rounded-full pl-2 pr-6 py-2 shadow-2xl ring-1 ring-white/5">
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center text-xl shadow-inner text-white font-bold ring-2 ring-black/50">
                             {/* Avatar or Initial */}
                             {currentVideo.addedBy.photoURL ? (
-                                <img src={currentVideo.addedBy.photoURL} className="w-full h-full rounded-full" />
+                                <img src={currentVideo.addedBy.photoURL} className="w-full h-full rounded-full object-cover" />
                             ) : (
-                                <span>{currentVideo.addedBy.displayName?.charAt(0).toUpperCase()}</span>
+                                <span>{(currentVideo.addedBy.name || currentVideo.addedBy.displayName || '?').charAt(0).toUpperCase()}</span>
                             )}
                         </div>
                         <div className="flex flex-col">
-                            <span className="text-[10px] text-gray-300 font-bold uppercase tracking-wider leading-none mb-1">Requested By</span>
-                            <span className="text-sm font-bold text-white leading-none truncate max-w-[150px]">
-                                {currentVideo.addedBy.displayName}
+                            <span className="text-[10px] text-indigo-300 font-bold uppercase tracking-wider leading-none mb-1">Requested By</span>
+                            <span className="text-base font-bold text-white leading-none truncate max-w-[200px] drop-shadow-md">
+                                {currentVideo.addedBy.name || currentVideo.addedBy.displayName}
                             </span>
                         </div>
                     </div>

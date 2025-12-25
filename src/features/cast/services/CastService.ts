@@ -165,65 +165,68 @@ export class CastService {
             } catch (e) {
                 console.error('Command Poll Error:', e);
             }
-        }, 500);
-    }
+        } catch (e) {
+            console.error('Command Poll Error:', e);
+        }
+    }, 100); // Poll every 100ms for snappy response
+}
 
     private async markCommandComplete(cmdId: string) {
-        if (!realtimeDb || !this.roomCode) return;
-        const dbURL = realtimeDb.app.options.databaseURL;
-        const user = auth.currentUser;
-        if (!user) return;
-        const token = await user.getIdToken();
+    if (!realtimeDb || !this.roomCode) return;
+    const dbURL = realtimeDb.app.options.databaseURL;
+    const user = auth.currentUser;
+    if (!user) return;
+    const token = await user.getIdToken();
 
-        fetch(`${dbURL}/antigravity_rooms/${this.roomCode}/commands/${cmdId}/status.json?auth=${token}`, {
-            method: 'PUT',
-            body: JSON.stringify('completed')
-        });
-    }
+    fetch(`${dbURL}/antigravity_rooms/${this.roomCode}/commands/${cmdId}/status.json?auth=${token}`, {
+        method: 'PUT',
+        body: JSON.stringify('completed')
+    });
+}
 
     private executeCommand(command: any) {
-        console.log('⚡ Executing Remote Command:', command.type);
-        const store = usePlayerStore.getState();
+    console.log('⚡ Executing Remote Command:', command.type);
+    const store = usePlayerStore.getState();
 
-        switch (command.type) {
-            case 'PLAY': store.play(); break;
-            case 'PAUSE': store.pause(); break;
-            case 'NEXT': store.playNext(); break;
-            case 'PREVIOUS': store.playPrevious(); break;
-            case 'ADD_TO_QUEUE':
-                if (command.payload?.video) {
-                    const videoToAdd = { ...command.payload.video };
-                    // Inject addedBy from the command envelope (or payload sibling)
-                    if (command.payload.addedBy) {
-                        videoToAdd.addedBy = command.payload.addedBy;
-                    }
-                    store.addToQueue(videoToAdd);
+    switch (command.type) {
+        case 'PLAY': store.play(); break;
+        case 'PAUSE': store.pause(); break;
+        case 'NEXT': store.playNext(); break;
+        case 'PREVIOUS': store.playPrevious(); break;
+        case 'ADD_TO_QUEUE':
+            if (command.payload?.video) {
+                const videoToAdd = { ...command.payload.video };
+                // Inject addedBy from the command envelope (or payload sibling)
+                if (command.payload.addedBy) {
+                    videoToAdd.addedBy = command.payload.addedBy;
                 }
-                break;
-            case 'SKIP_TO':
-                if (typeof command.payload?.index === 'number') store.setCurrentIndex(command.payload.index);
-                break;
-            case 'REMOVE_AT':
-                // We need UUID implementation in remote to do this properly, 
-                // but legacy might send index.
-                // Store uses UUID. Check if payload has UUID or Index.
-                // Implementation Plan said "Queue Management" done. Use RemoveByUUID.
-                // If remote sends index, we might need a helper.
-                break;
-            case 'SET_VOLUME':
-                if (command.payload?.volume) store.setVolume(command.payload.volume);
-                break;
-            case 'CLEAR_QUEUE':
-                store.clearQueue();
-                break;
-            case 'REORDER_QUEUE':
-                if (Array.isArray(command.payload?.queue)) {
-                    console.log('🔄 Reordering queue via remote command');
-                    store.reorderQueue(command.payload.queue);
-                }
-                break;
-        }
+                store.addToQueue(videoToAdd);
+            }
+            break;
+        case 'SKIP_TO':
+            if (typeof command.payload?.index === 'number') store.setCurrentIndex(command.payload.index);
+            break;
+        case 'REMOVE_AT':
+            // We need UUID implementation in remote to do this properly, 
+            // but legacy might send index.
+            // Store uses UUID. Check if payload has UUID or Index.
+            // Implementation Plan said "Queue Management" done. Use RemoveByUUID.
+            // If remote sends index, we might need a helper.
+            break;
+        case 'SET_VOLUME':
+            if (command.payload?.volume) store.setVolume(command.payload.volume);
+            break;
+        case 'CLEAR_QUEUE':
+            store.clearQueue();
+            break;
+        case 'REORDER_QUEUE':
+            if (Array.isArray(command.payload?.queue)) {
+                console.log('🔄 Reordering queue via remote command');
+                store.reorderQueue(command.payload.queue);
+            }
+            break;
     }
+}
 }
 
 export const castService = new CastService();
