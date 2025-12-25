@@ -15,7 +15,7 @@ export default function AdminDashboard() {
     ];
 
     return (
-        <AdminLayout headerTitle="System Insight">
+        <AdminLayout headerTitle="YouOke Command Center (v2)">
             <Head>
                 <title>Dashboard - YouOke Admin</title>
             </Head>
