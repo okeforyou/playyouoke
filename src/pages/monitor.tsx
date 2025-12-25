@@ -95,40 +95,52 @@ export default function MonitorPage() {
           <span className="mt-2 font-mono text-xl font-bold text-pink-400 tracking-widest">{roomCode}</span>
         </div>
 
-        {/* Bottom Area: Next Song Indicator */}
-        <div className="mt-auto flex items-end justify-between w-full">
-          {/* SidebarPlayer has its own "Now Playing" toast on bottom-left. 
-                  We will place the "Next Queue" on Bottom Right. 
-              */}
-          <div className="flex-1"></div> {/* Spacer */}
+        {/* Bottom Area: Next Song Indicator - Auto Hide */}
+        <div className="mt-auto flex items-end justify-between w-full pointer-events-none">
+          <div className="flex-1"></div>
 
-          {queue.length > 0 && (
-            <div className="max-w-md bg-black/60 backdrop-blur-lg border-l-4 border-indigo-500 p-4 rounded-r-xl rounded-tl-xl shadow-2xl animate-in slide-in-from-right duration-700">
-              <p className="text-xs text-indigo-300 font-bold uppercase tracking-wider mb-1">Coming Up Next</p>
-              {queue[0] && ( // queue[0] is current, Wait. 
-                // If logic says isIdle is false, then queue[0] is PLAYING.
-                // "Up Next" should be queue[1].
-                queue[1] ? (
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-lg font-bold text-white truncate">{queue[1].title}</p>
-                      <p className="text-sm text-gray-400 truncate">{queue[1].author}</p>
-                    </div>
-                    {queue[1].addedBy && (
-                      <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold ring-2 ring-black">
-                        {queue[1].addedBy.displayName?.charAt(0)}
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <p className="text-gray-400 italic text-sm">Queue is empty. Add a song!</p>
-                )
-              )}
-            </div>
-          )}
+          <NextSongOverlay queue={queue} currentVideo={currentVideo} />
         </div>
       </div>
+    </div>
+  );
+}
 
+// Subcomponent to handle the toast logic
+function NextSongOverlay({ queue, currentVideo }: { queue: any[], currentVideo: any }) {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    if (currentVideo && queue.length > 1) {
+      setVisible(true);
+      const timer = setTimeout(() => setVisible(false), 8000); // Show for 8 seconds
+      return () => clearTimeout(timer);
+    }
+  }, [currentVideo, queue]); // Re-trigger on song change
+
+  // If visible is false, we fade out
+  // If no next song (queue[1]), we don't render or fade out immediately
+  const nextSong = queue[1];
+
+  return (
+    <div className={`max-w-md bg-black/80 backdrop-blur-xl border-l-4 border-indigo-500 p-4 rounded-r-xl rounded-tl-xl shadow-2xl transition-all duration-1000 transform ${visible && nextSong ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'}`}>
+      {nextSong && (
+        <>
+          <p className="text-xs text-indigo-300 font-bold uppercase tracking-wider mb-1 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
+            Coming Up Next
+          </p>
+          <div className="flex items-center gap-3">
+            {/* Thumbnail if available (optional) */}
+            {nextSong.thumbnail && <img src={nextSong.thumbnail} className="w-10 h-10 rounded object-cover opacity-80" />}
+
+            <div className="flex-1 min-w-0">
+              <p className="text-lg font-bold text-white truncate max-w-[200px]">{nextSong.title}</p>
+              <p className="text-sm text-gray-400 truncate">{nextSong.author}</p>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
