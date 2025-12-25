@@ -16,6 +16,7 @@ interface MainLayoutProps {
 
 export default function MainLayout({ children }: MainLayoutProps) {
     const [isQueueOpen, setQueueOpen] = useState(false); // Mobile Queue Drawer
+    const [isMobilePlayerExpanded, setMobilePlayerExpanded] = useState(false); // Mobile Global Player Expansion
 
     // Auth & Config
     const { user } = useAuthStore();
@@ -166,27 +167,104 @@ export default function MainLayout({ children }: MainLayoutProps) {
                     </div>
                 </header>
 
-                {/* Scrollable Content */}
+                {/* Scrolling Content */}
                 <main className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300">
                     {children}
                 </main>
 
                 {/* Mobile Mini Player */}
-                <MobileMiniPlayer onExpandQueue={() => setQueueOpen(true)} />
+                <MobileMiniPlayer
+                    onExpandQueue={() => setQueueOpen(true)}
+                    onExpandPlayer={() => setMobilePlayerExpanded(true)}
+                />
             </div>
 
             {/* 
         -------------------------------------------
-        RIGHT COLUMN: Fixed Sidebar (Player + Queue) 
+        GLOBAL PLAYER CONTAINER (Always Mounted)
+        -------------------------------------------
+        Desktop: Fixed inside the Sidebar area visually (via absolute/fixed or grid).
+        Mobile: Fixed at bottom (Mini) or Fullscreen (Expanded).
+        We use 'hidden lg:block' logic differently now. 
+        It must be mounted.
+       */}
+
+            {mounted && (
+                <div className="fixed top-0 bottom-0 right-0 w-[400px] z-20 pointer-events-none hidden lg:flex flex-col">
+                    {/* Placeholder to match the sidebar's player area */}
+                    {/* Actually, we can just render the Player here for Desktop and use a Portal for Mobile?
+                        OR easier: Just render it here, and on mobile render it fixed at bottom.
+                    */}
+                </div>
+            )}
+
+            {/* The Actual Player Instance - Global Positioned */}
+            {mounted && (
+                <div
+                    id="global-player-container"
+                    className="fixed z-50 transition-all duration-300 shadow-2xl overflow-hidden bg-black"
+                    style={{
+                        // Responsive logic handled via CSS classes if possible, or dynamic style
+                        // Desktop: Top-Right, Width 400px, Aspect Video
+                        // Mobile: 
+                        //   - Collapsed: Invisible (opacity 0) BUT mounted? Or 1x1 pixel?
+                        //   - Expanded: Inset 0 (Fullscreen).
+                    }}
+                >
+                    {/* We need a smarter way. 
+                        Let's use a standard "Mobile View" div and "Desktop View" div. 
+                        But YouTube iframe reloads if moved in DOM. 
+                        So we must keep it in ONE place and use CSS to move the container.
+                    */}
+                </div>
+            )}
+
+            {/* 
+               REVISED STRATEGY: 
+               We simply render SidebarPlayer inside MainLayout's root (absolute).
+               On Desktop: It aligns with the Sidebar hole.
+               On Mobile: It is normally hidden (opacity 0, pointer-events-none) to keep audio.
+                          When "Expanded" via MiniPlayer, it grows to fullscreen.
+            */}
+
+            {mounted && (
+                <div className={clsx(
+                    "fixed transition-all duration-500 z-50 bg-black overflow-hidden shadow-2xl",
+                    // Desktop Styles: Fixed Top-Right Sidebar Area
+                    "lg:top-0 lg:right-0 lg:w-[400px] lg:aspect-video lg:translate-y-0 lg:opacity-100",
+
+                    // Mobile Styles: Default hidden (but active for audio)
+                    // We use 'translate-y-[200%]' or similar to hide it offscreen BUT maintain DOM.
+                    // Or opacity 0.
+                    !isMobilePlayerExpanded ? "max-lg:opacity-0 max-lg:pointer-events-none max-lg:fixed max-lg:bottom-0 max-lg:right-0 max-lg:w-1 max-lg:h-1" :
+                        // Mobile Expanded: Full Screen
+                        "max-lg:inset-0 max-lg:w-full max-lg:h-full max-lg:opacity-100"
+                )}>
+                    <div className="relative w-full h-full">
+                        <SidebarPlayer />
+                        {/* Mobile Collapse Button (Only visible on mobile expanded) */}
+                        <button
+                            onClick={() => setMobilePlayerExpanded(false)}
+                            className="absolute top-4 left-4 z-50 p-2 bg-black/50 text-white rounded-full lg:hidden"
+                        >
+                            <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* 
+        -------------------------------------------
+        RIGHT COLUMN: Fixed Sidebar (Queue Only now) 
         Desktop Only
         -------------------------------------------
       */}
             <aside className="hidden lg:flex w-[400px] bg-muted border-l border-border flex-col shadow-xl z-20 overflow-hidden">
                 {mounted ? (
                     <>
-                        {/* Player Area */}
-                        <div className="aspect-video bg-black sticky top-0 shrink-0 shadow-lg z-30">
-                            <SidebarPlayer />
+                        {/* Player Placeholder (Empty space for the Global Player to sit on top of) */}
+                        <div className="aspect-video bg-black/10 shrink-0">
+                            {/* The Global Player (absolute) sits exactly here visually on desktop */}
                         </div>
 
                         {/* Controls */}

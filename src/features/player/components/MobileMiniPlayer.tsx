@@ -5,7 +5,7 @@ import { playerService } from "../services/playerService";
 import YouTube from "react-youtube";
 import { SidebarPlayer } from "./SidebarPlayer";
 
-export const MobileMiniPlayer = ({ onExpandQueue }: { onExpandQueue: () => void }) => {
+export const MobileMiniPlayer = ({ onExpandQueue, onExpandPlayer }: { onExpandQueue: () => void, onExpandPlayer: () => void }) => {
     const { isPlaying, currentSource } = usePlayerStore();
 
     const togglePlay = (e: React.MouseEvent) => {
@@ -40,7 +40,7 @@ export const MobileMiniPlayer = ({ onExpandQueue }: { onExpandQueue: () => void 
             {/* Safe bet: MainLayout uses absolute positioning off-screen for the player if mobile? */}
             {/* For now, assuming sticking with SidebarPlayer being present but hidden. If issues arise, we move SidebarPlayer to a shared persistent hidden container. */}
 
-            <div className="flex items-center gap-3 overflow-hidden flex-1">
+            <div className="flex items-center gap-3 overflow-hidden flex-1 active:opacity-70 transition-opacity" onClick={onExpandPlayer}>
                 <div className="w-10 h-10 bg-black rounded-md shrink-0 border border-border overflow-hidden relative">
                     {/* Mini Thumbnail or Video */}
                     <img
