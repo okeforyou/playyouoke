@@ -14,6 +14,7 @@ interface PlayerStore extends PlayerState {
     play: () => void;
     pause: () => void;
     togglePlay: () => void;
+    playVideo: (videoId: string) => void;
     setActiveAdapter: (id: string) => void;
 
     // Queue Actions
@@ -54,6 +55,25 @@ export const usePlayerStore = create<PlayerStore>()(
             play: () => set({ isPlaying: true }),
             pause: () => set({ isPlaying: false }),
             togglePlay: () => set((state) => ({ isPlaying: !state.isPlaying })),
+
+            playVideo: (videoId) => set((state) => {
+                const newItem: QueueItem = {
+                    videoId,
+                    title: 'Playing Video', // We might not have title here, ideally we fetch it or pass it. 
+                    // But for Hero "Play Now", we often just have ID. 
+                    // The player will resolve metadata later if needed or we accept generic title.
+                    author: 'System',
+                    uuid: generateUUID(),
+                    thumbnail: `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`
+                };
+                return {
+                    queue: [newItem],
+                    currentIndex: 0,
+                    currentVideo: newItem,
+                    currentSource: videoId,
+                    isPlaying: true
+                };
+            }),
 
             setActiveAdapter: (id) => set({ activeAdapterId: id }),
 
