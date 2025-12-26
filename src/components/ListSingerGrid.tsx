@@ -122,15 +122,22 @@ export default function ListSingerGrid({ showTab = true }) {
     <JooxError />
   ) : (
     <>
-      <div className="col-span-full  bg-transparent pt-2">
+      <div className="col-span-full bg-transparent pt-2">
         {showTab && (
-          <nav className="tabs tabs-boxed flex justify-center  bg-transparent">
-            <button type="button" className="tab tab-active">
+          <nav className="flex justify-center gap-4 bg-transparent mb-4">
+            <button
+              type="button"
+              className={`px-6 py-2 rounded-full text-base font-medium transition-all ${
+                // Use Active Index logic from parent if passed, or just hardcode visual state for now since logic is mixed
+                // The original code used daisyUI tabs class. We replace with cleaner buttons.
+                "bg-primary text-white shadow-md hover:bg-primary-focus"
+                }`}
+            >
               ศิลปินยอดฮิต
             </button>
             <button
               type="button"
-              className="tab"
+              className="px-6 py-2 rounded-full text-base font-medium text-gray-600 hover:bg-gray-100 transition-all"
               onClick={() => {
                 setActiveIndex(2);
               }}
@@ -140,19 +147,15 @@ export default function ListSingerGrid({ showTab = true }) {
           </nav>
         )}
       </div>
-      <div className="col-span-full  bg-transparent  pl-2 text-lg font-semibold text-gray-900">
-        ศิลปินยอดนิยม
-      </div>
-      <div
-        className={`relative grid grid-cols-4 xl:grid-cols-6 gap-2 col-span-full pt-2 pb-4`}
-      >
+
+      {/* Artist Grid */}
+      <div className={`relative grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 xl:grid-cols-8 gap-3 col-span-full pb-6 px-2`}>
         {isLoadTopArtists && (
           <>
-            <div className="absolute inset-0 bg-gradient-to-t from-base-300 z-10" />
             {getSkeletonItems(16).map((s, i) => (
               <div
                 key={s + i}
-                className="card bg-gray-300 animate-pulse w-full aspect-w-1 aspect-h-1"
+                className="card bg-gray-200 animate-pulse w-full aspect-square rounded-2xl"
               ></div>
             ))}
           </>
@@ -161,19 +164,19 @@ export default function ListSingerGrid({ showTab = true }) {
           return (
             <Fragment key={artist.name + i}>
               <div
-                className="overflow-hidden bg-transparent cursor-pointer flex-auto"
+                className="group relative flex flex-col items-center cursor-pointer transition-transform hover:-translate-y-1"
                 onClick={() => {
                   setSearchTerm(artist.name);
                 }}
               >
-                <figure className="relative w-full aspect-square">
+                <div className="relative w-full aspect-square mb-2 overflow-hidden rounded-full shadow-sm group-hover:shadow-md border border-gray-100/50">
                   <Image
                     unoptimized
                     src={artist.imageUrl}
                     priority
                     alt={artist.name}
                     layout="fill"
-                    className="animate-pulse bg-gray-400 rounded-lg object-cover"
+                    className="object-cover transition-transform duration-500 group-hover:scale-110"
                     onLoad={(ev) =>
                       ev.currentTarget.classList.remove("animate-pulse")
                     }
@@ -181,135 +184,122 @@ export default function ListSingerGrid({ showTab = true }) {
                       ev.currentTarget.src = "/assets/avatar.jpeg";
                     }}
                   />
-                </figure>
-                <div className="card-body p-1">
-                  <h2 className="text-sm 2xl:text-md text-center pt-2 line-clamp-2">
-                    {artist.name}
-                  </h2>
+                  {/* Play Overlay Hints */}
+                  <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                    <div className="bg-white/90 p-2 rounded-full shadow-sm backdrop-blur-sm">
+                      <svg className="w-6 h-6 text-primary ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                    </div>
+                  </div>
                 </div>
+                <h2 className="text-xs sm:text-sm font-medium text-gray-800 text-center line-clamp-1 group-hover:text-primary transition-colors">
+                  {artist.name}
+                </h2>
               </div>
             </Fragment>
           );
         })}
       </div>
-      <div className="col-span-full  bg-transparent p-2 pl-2 text-lg font-semibold text-gray-900">
-        แนวเพลง
+
+      <div className="col-span-full px-2 pt-2 pb-2 text-lg font-bold text-gray-800 flex items-center gap-2">
+        แนวเพลง <span className="text-xs font-normal text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">เลือกได้เลย</span>
       </div>
 
-      <div
-        className={`tabs tabs-boxed col-span-full justify-center bg-transparent relative grid grid-cols-3 xl:grid-cols-5  gap-2 col-span-full p-0`}
-      >
-        {GENRES?.map((gen) => {
-          // gen list
-          return (
-            <div
-              key={gen}
-              className={`text-sm h-10 leading-6 hover:drop-shadow-xl hover:text-slate-200   text-white  tab   ${genreText == gen ? "tab-active" : ""
-                }   
-                `}
-              onClick={() => handleGenre(gen)}
-              style={{ borderRadius: "9999px" }}
-            >
-              <div
-                className="absolute  top-0 h-full w-full bg-fixed items-center rounded-full  "
-                style={{
-                  backgroundColor: genreText == gen ? "" : "rgba(0, 0, 0, 0.4)",
-                }}
-              >
-                <div className="flex h-full items-center justify-center">
-                  {gen}
-                </div>
-              </div>
-            </div>
-          );
-        })}
-
+      {/* Genres: Horizontal Scroll (Easier to use) */}
+      <div className="col-span-full flex overflow-x-auto gap-2 px-2 pb-4 scrollbar-hide -mx-2 md:mx-0">
+        {GENRES?.map((gen) => (
+          <button
+            key={gen}
+            onClick={() => handleGenre(gen)}
+            className={`
+                 whitespace-nowrap px-5 py-2 rounded-full text-sm font-medium transition-all border
+                 ${genreText == gen
+                ? "bg-primary text-white border-primary shadow-sm"
+                : "bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50 bg-opacity-80 backdrop-blur-sm"
+              }
+              `}
+          >
+            {gen}
+          </button>
+        ))}
         <Chip
           label={OKE_PLAYLIST}
           onClick={() => handleGenre(OKE_PLAYLIST)}
-          className={`cursor-pointer bg-black/50  hover:text-slate-200 ${genreText === OKE_PLAYLIST ? "bg-primary" : ""
-            }`}
+          className={`cursor-pointer whitespace-nowrap px-5 py-2 rounded-full text-sm font-medium border transition-all ${genreText === OKE_PLAYLIST ? "bg-primary text-white border-primary" : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"}`}
         />
       </div>
-      <div
-        ref={playlistRef}
-        className="col-span-full  bg-transparent p-2 pl-2 text-lg font-semibold text-gray-900"
-      >
-        เพลย์ลิสต์
+
+      <div ref={playlistRef} className="col-span-full px-2 pt-4 pb-2 text-lg font-bold text-gray-800">
+        เพลย์ลิสต์แนะนำ
       </div>
+
+      {/* Category/Mood Tags: Horizontal Scroll */}
       {!isLoadTopArtists && (
-        <div
-          className={`tabs tabs-boxed col-span-full justify-center bg-transparent relative grid grid-cols-3 xl:grid-cols-5  gap-2 col-span-full p-0`}
-        >
-          {topArtistsData?.artistCategories.map((cat) => {
-            const names = cat.tag_name;
-
-            // Tag list
-            return (
-              <div
-                key={cat.tag_id}
-                className={`text-sm aspect-square rounded-lg  leading-6 hover:drop-shadow-xl hover:text-slate-200 tracking-wide text-white bg-slate-900  bg-cover bg-center bg-no-repeat ${tagId == cat.tag_id ? "" : ""
-                  }   
+        <div className="col-span-full flex overflow-x-auto gap-3 px-2 pb-6 scrollbar-hide">
+          {topArtistsData?.artistCategories.map((cat) => (
+            <div
+              key={cat.tag_id}
+              onClick={() => {
+                setTagId(cat.tag_id);
+                handleSongScroll();
+              }}
+              className={`
+                   relative flex-shrink-0 w-32 h-20 rounded-xl overflow-hidden cursor-pointer shadow-sm hover:shadow-md transition-all hover:scale-105 group
+                   ${tagId == cat.tag_id ? "ring-2 ring-offset-1 ring-primary" : ""}
                 `}
-                onClick={() => {
-                  setTagId(cat.tag_id);
-
-                  handleSongScroll();
-                }}
+            >
+              <div
+                className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110"
                 style={{ backgroundImage: `url('${cat.imageUrl}')` }}
-              >
-                <div
-                  className="absolute  top-0 h-full w-full bg-fixed items-center rounded-lg"
-                  style={{ backgroundColor: "rgba(0, 0, 0, 0.5)" }}
-                >
-                  <div className="flex h-full items-center justify-center text-center">
-                    {names}
-                  </div>
-                </div>
+              />
+              <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition-colors" />
+              <div className="absolute inset-0 flex items-center justify-center p-2">
+                <span className="text-white font-bold text-sm text-center drop-shadow-md">{cat.tag_name}</span>
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
       )}
+
+      {/* Loading Skeletons */}
       {isLoading && (
         <>
-          <div className="fixed inset-0 bg-gradient-to-t bottom-0 from-base-300 z-10" />
-          {getSkeletonItems(16).map((s) => (
-            <div
-              key={s}
-              className="card bg-gray-300 animate-pulse w-full aspect-w-4 aspect-h-3"
-            />
-          ))}
+          <div className="col-span-full grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 px-2">
+            {getSkeletonItems(8).map((s) => (
+              <div key={s} className="h-48 bg-gray-200 rounded-xl animate-pulse" />
+            ))}
+          </div>
         </>
       )}
+
       <div
         ref={songlistRef}
-        className="col-span-full bg-transparent p-4 pb-2 pl-2 text-lg font-semibold text-gray-900"
+        className="col-span-full px-2 pt-2 pb-2 text-lg font-bold text-gray-800 flex items-center gap-2"
       >
         {(topArtistsData?.artistCategories || []).find(
           (cat) => cat.tag_id === tagId
         )?.tag_name || "เพลง"}
+        <span className="text-xs font-normal text-gray-400">รายการเพลงในหมวดนี้</span>
       </div>
-      <div
-        className={`tabs tabs-boxed col-span-full justify-center bg-transparent relative grid grid-cols-3 xl:grid-cols-5  gap-2 col-span-full p-0`}
-      >
+
+      {/* Song List Grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 col-span-full px-2 pb-20">
         {artist?.map((artist, i) => {
           return (
             <Fragment key={artist.name + i}>
               <div
-                className="card overflow-hidden bg-white shadow hover:shadow-md cursor-pointer flex-auto rounded-lg"
+                className="group cursor-pointer bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md hover:border-primary/20 transition-all overflow-hidden"
                 onClick={() => {
                   setSearchTerm(artist.name);
                 }}
               >
-                <figure className="relative w-full aspect-square">
+                <div className="relative w-full aspect-square overflow-hidden bg-gray-100">
                   <Image
                     unoptimized
                     src={artist.imageUrl}
                     priority
                     alt={artist.name}
                     layout="fill"
-                    className="animate-pulse bg-gray-400 object-cover"
+                    className="object-cover transition-transform duration-500 group-hover:scale-110"
                     onLoad={(ev) =>
                       ev.currentTarget.classList.remove("animate-pulse")
                     }
@@ -317,9 +307,15 @@ export default function ListSingerGrid({ showTab = true }) {
                       ev.currentTarget.src = "/assets/avatar.jpeg";
                     }}
                   />
-                </figure>
-                <div className="card-body p-2">
-                  <h2 className="font-semibold  text-sm 2xl:text-2xl line-clamp-2 h-[2.7em]">
+                  {/* Quick Play Icon Overlay */}
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="bg-white p-2 rounded-full shadow-lg">
+                      <svg className="w-5 h-5 text-black" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
+                    </div>
+                  </div>
+                </div>
+                <div className="p-3">
+                  <h2 className="font-semibold text-sm line-clamp-2 h-[2.5em] text-gray-700 group-hover:text-primary transition-colors leading-snug">
                     {artist.name}
                   </h2>
                 </div>
