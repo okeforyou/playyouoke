@@ -217,8 +217,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
             */}
             {mounted && (
                 <div className={clsx(
-                    "fixed transition-all duration-500 z-50 bg-black overflow-hidden shadow-2xl",
-                    "lg:top-0 lg:right-0 lg:w-[400px] lg:aspect-video lg:translate-y-0 lg:opacity-100",
+                    "fixed transition-all duration-500 z-[100] bg-black overflow-hidden shadow-2xl",
+                    "lg:top-0 lg:right-0 lg:w-[400px] lg:h-[225px] lg:translate-y-0 lg:opacity-100",
                     !isMobilePlayerExpanded ? "max-lg:opacity-0 max-lg:pointer-events-none max-lg:fixed max-lg:bottom-0 max-lg:right-0 max-lg:w-1 max-lg:h-1" :
                         "max-lg:inset-0 max-lg:w-full max-lg:h-full max-lg:opacity-100"
                 )}>
