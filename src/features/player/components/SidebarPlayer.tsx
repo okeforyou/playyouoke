@@ -138,7 +138,7 @@ export const SidebarPlayer = () => {
     return (
         <div className="w-full h-full relative group">
             {/* YouTube Layer */}
-            <div className={`absolute inset-0 z-0 ${showAds ? 'pointer-events-none' : ''}`}> {/* Disable interaction if ads are forcefully shown? Or just overlay */}
+            <div className={`absolute inset-0 z-0 youtube-player-wrapper ${showAds ? 'pointer-events-none' : ''}`}> {/* Disable interaction if ads are forcefully shown? Or just overlay */}
                 <YouTube
                     videoId={currentSource || ""}
                     opts={opts}

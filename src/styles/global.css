@@ -130,6 +130,21 @@ html {
   }
 }
 
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /* Force YouTube Iframe to fill container */
+  .youtube-player-wrapper iframe {
+    width: 100% !important;
+    height: 100% !important;
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+}
+
 .animate-fade-in {
   animation: fade-in 0.5s ease-out;
 }
