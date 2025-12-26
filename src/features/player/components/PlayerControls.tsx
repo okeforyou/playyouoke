@@ -29,7 +29,7 @@ export const PlayerControls = () => {
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                     {/* Controls */}
-                    <button className="text-text-base hover:text-primary transition">
+                    <button onClick={() => playerService.playPrevious()} className="text-text-base hover:text-primary transition">
                         <SkipBack size={20} />
                     </button>
 
@@ -40,7 +40,10 @@ export const PlayerControls = () => {
                         {isPlaying ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" className="ml-1" />}
                     </button>
 
-                    <button className="text-text-base hover:text-primary transition">
+                    <button onClick={() => {
+                        console.log("⏭️ User clicked Next");
+                        playerService.playNext();
+                    }} className="text-text-base hover:text-primary transition">
                         <SkipForward size={20} />
                     </button>
                 </div>
