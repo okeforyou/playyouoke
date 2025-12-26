@@ -2,6 +2,7 @@ import React, { ReactNode, useState, useEffect } from 'react';
 import clsx from 'clsx';
 import { Menu, Search, ListMusic, Home, X } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 import { useAuthStore } from '../features/auth/useAuthStore';
 import { SidebarPlayer } from '../features/player/components/SidebarPlayer';
 import { PlayerControls } from '../features/player/components/PlayerControls';
@@ -15,6 +16,7 @@ interface MainLayoutProps {
 }
 
 export default function MainLayout({ children }: MainLayoutProps) {
+    const router = useRouter();
     const [isQueueOpen, setQueueOpen] = useState(false); // Mobile Queue Drawer
     const [isMobilePlayerExpanded, setMobilePlayerExpanded] = useState(false); // Mobile Global Player Expansion
 
@@ -178,8 +180,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
                                 <button
                                     onClick={() => setShowQRCode(!showQRCode)}
                                     className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all ${showQRCode
-                                            ? 'bg-primary text-white border-primary shadow-md'
-                                            : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+                                        ? 'bg-primary text-white border-primary shadow-md'
+                                        : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
                                         }`}
                                 >
                                     <span className="text-lg">📱</span>
