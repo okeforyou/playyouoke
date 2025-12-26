@@ -98,7 +98,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                         <span>ติดต่อ LINE</span>
                     </a>
 
-                    {(userRole === 'admin') && (
+                    {(user?.role === 'admin' || user?.email?.includes('admin')) && (
                         <div className="mt-4">
                             <div className="px-3 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Admin</div>
                             <Link href="/admin" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-red-500 hover:bg-red-50 transition-all font-bold">
