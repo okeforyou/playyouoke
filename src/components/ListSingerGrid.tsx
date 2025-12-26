@@ -204,17 +204,17 @@ export default function ListSingerGrid({ showTab = true }) {
         แนวเพลง <span className="text-xs font-normal text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">เลือกได้เลย</span>
       </div>
 
-      {/* Genres: Horizontal Scroll (Easier to use) */}
-      <div className="col-span-full flex overflow-x-auto gap-2 px-2 pb-4 scrollbar-hide -mx-2 md:mx-0">
+      {/* Genres: Grid Layout (Classic & Easy) */}
+      <div className="col-span-full grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-2 px-2 pb-4">
         {GENRES?.map((gen) => (
           <button
             key={gen}
             onClick={() => handleGenre(gen)}
             className={`
-                 whitespace-nowrap px-5 py-2 rounded-full text-sm font-medium transition-all border
+                 w-full py-2 rounded-full text-sm font-medium transition-all border
                  ${genreText == gen
-                ? "bg-primary text-white border-primary shadow-sm"
-                : "bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50 bg-opacity-80 backdrop-blur-sm"
+                ? "bg-primary text-white border-primary shadow-md transform scale-105"
+                : "bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50 hover:shadow-sm"
               }
               `}
           >
@@ -224,7 +224,7 @@ export default function ListSingerGrid({ showTab = true }) {
         <Chip
           label={OKE_PLAYLIST}
           onClick={() => handleGenre(OKE_PLAYLIST)}
-          className={`cursor-pointer whitespace-nowrap px-5 py-2 rounded-full text-sm font-medium border transition-all ${genreText === OKE_PLAYLIST ? "bg-primary text-white border-primary" : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"}`}
+          className={`cursor-pointer w-full py-2 rounded-full text-center text-sm font-medium border transition-all ${genreText === OKE_PLAYLIST ? "bg-primary text-white border-primary" : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"}`}
         />
       </div>
 

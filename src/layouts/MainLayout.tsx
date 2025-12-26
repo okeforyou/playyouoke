@@ -81,8 +81,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
                             <h1 className="text-xl font-bold tracking-tight">YouOke</h1>
                         </div>
                         <nav className="flex items-center gap-6 text-sm font-medium">
-                            <Link href="/" className="hover:text-primary transition-colors">Find Songs</Link>
-                            <Link href="/monitor" className="hover:text-primary transition-colors">Monitor</Link>
+                            <Link href="/" className="px-3 py-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-white/10 text-primary font-bold bg-primary/10 transition-colors">Find Songs</Link>
+                            <Link href="/monitor" className="hover:text-primary transition-colors px-3 py-1.5 rounded-md">Monitor</Link>
                             {(user?.role === 'admin' || user?.email?.includes('admin')) && (
                                 <Link href="/admin" className="text-primary font-bold hover:text-primary-focus transition-colors flex items-center gap-2">
                                     <span>🛡️ Admin</span>
