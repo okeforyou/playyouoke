@@ -1,9 +1,11 @@
 import React, { ReactNode, useState, useEffect } from 'react';
 import clsx from 'clsx';
-import { Menu, Search, ListMusic, Home, X } from 'lucide-react';
+import { Menu, Search, ListMusic, Home, X, Monitor, MessageCircle, Shield, Key, Smartphone } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
+import { DebounceInput } from 'react-debounce-input';
 import { useAuthStore } from '../features/auth/useAuthStore';
+import { useKaraokeState } from '../hooks/karaoke';
 import { SidebarPlayer } from '../features/player/components/SidebarPlayer';
 import { PlayerControls } from '../features/player/components/PlayerControls';
 import { QueueList } from '../features/player/components/QueueList';
@@ -19,6 +21,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
     const router = useRouter();
     const [isQueueOpen, setQueueOpen] = useState(false); // Mobile Queue Drawer
     const [isMobilePlayerExpanded, setMobilePlayerExpanded] = useState(false); // Mobile Global Player Expansion
+    const { searchTerm, setSearchTerm } = useKaraokeState();
 
     // Auth & Config
     const { user } = useAuthStore();
@@ -91,13 +94,13 @@ export default function MainLayout({ children }: MainLayoutProps) {
                         "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all font-medium",
                         router.pathname === '/monitor' ? "bg-primary text-white shadow-md shadow-primary/30" : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5"
                     )}>
-                        <span className="text-lg">📺</span>
+                        <Monitor className="w-5 h-5" />
                         <span>จอภาพ (Monitor)</span>
                     </Link>
 
                     <div className="mt-6 px-3 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">ช่วยเหลือ</div>
                     <a href="#" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5 transition-all font-medium">
-                        <span className="text-lg">💬</span>
+                        <MessageCircle className="w-5 h-5" />
                         <span>ติดต่อ LINE</span>
                     </a>
 
@@ -108,7 +111,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                                 "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all font-bold",
                                 router.pathname.startsWith('/admin') ? "text-red-600 bg-red-50" : "text-red-500 hover:bg-red-50"
                             )}>
-                                <span>🛡️</span>
+                                <Shield className="w-5 h-5" />
                                 <span>ระบบจัดการ</span>
                             </Link>
                         </div>
@@ -135,7 +138,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                             </div>
                         ) : (
                             <Link href="/login" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-100 transition-all font-medium">
-                                <span className="text-lg">🔐</span>
+                                <Key className="w-5 h-5" />
                                 <span>เข้าสู่ระบบ</span>
                             </Link>
                         )
@@ -164,9 +167,21 @@ export default function MainLayout({ children }: MainLayoutProps) {
                 </header>
 
                 {/* Desktop Header (Top Right Controls) */}
-                <header className="hidden lg:flex h-16 border-b border-border items-center px-6 justify-between bg-base shrink-0">
-                    {/* Empty Left Placeholder */}
-                    <div className="flex-1"></div>
+                <header className="hidden lg:flex h-16 border-b border-border items-center px-6 justify-between bg-base shrink-0 gap-8">
+                    {/* Search Bar (Moved from Page to Header) */}
+                    <div className="flex-1 max-w-2xl relative">
+                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                            <Search className="w-5 h-5" />
+                        </div>
+                        <DebounceInput
+                            minLength={1}
+                            debounceTimeout={300}
+                            className="w-full h-10 pl-10 pr-4 bg-gray-50 border border-gray-200 rounded-full text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all placeholder:text-gray-400"
+                            placeholder="ค้นหาเพลง, ศิลปิน..."
+                            value={searchTerm}
+                            onChange={e => setSearchTerm(e.target.value)}
+                        />
+                    </div>
 
                     <div className="flex items-center gap-4">
                         {/* Cast Button */}
@@ -184,7 +199,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                                         : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
                                         }`}
                                 >
-                                    <span className="text-lg">📱</span>
+                                    <Smartphone className="w-4 h-4" />
                                     <span className="text-sm font-medium">Remote</span>
                                 </button>
 

@@ -68,59 +68,24 @@ export default function HomePage() {
   return (
     <MainLayout>
       <div className="flex flex-col min-h-full">
-        {/* Search Bar & Controls */}
-        <div className="sticky top-0 z-20 bg-base border-b border-border p-4 shadow-sm">
-          {mounted ? (
-            <div className="flex gap-4 items-center max-w-4xl mx-auto w-full">
-              <div className="relative flex-1">
-                <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <DebounceInput
-                  minLength={1}
-                  debounceTimeout={300}
-                  className="input input-bordered w-full pl-10"
-                  placeholder="Search for songs, artists..."
-                  value={searchTerm}
-                  onChange={e => setSearchTerm(e.target.value)}
-                />
-              </div>
-
-              {/* Karaoke Toggle */}
-              <div className="form-control">
-                <label className="label cursor-pointer gap-2">
-                  <span className="label-text font-medium hidden sm:inline">Karaoke Mode</span>
-                  <input
-                    type="checkbox"
-                    className="toggle toggle-primary"
-                    checked={isKaraoke}
-                    onChange={(e) => setIsKaraoke(e.target.checked)}
-                  />
-                </label>
-              </div>
-            </div>
-          ) : (
-            <div className="max-w-4xl mx-auto w-full h-12 bg-gray-100 rounded animate-pulse"></div>
-          )}
-
-          {/* Navigation Tabs (Classic) */}
-          {mounted && !searchTerm && (
-            <div className="flex justify-center gap-2 mt-4 overflow-x-auto pb-1">
-              {[
-                { id: 1, label: 'Artists', icon: '🎤' },
-                { id: 2, label: 'Trending', icon: '🔥' },
-                { id: 3, label: 'Playlists', icon: '📑' },
-              ].map(tab => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveIndex(tab.id)}
-                  className={`btn btn-sm ${activeIndex === tab.id ? 'btn-primary' : 'btn-ghost'}`}
-                >
-                  <span className="mr-1">{tab.icon}</span> {tab.label}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-
+        {/* Navigation Tabs (Classic) */}
+        {mounted && !searchTerm && (
+          <div className="flex justify-center gap-2 mt-4 overflow-x-auto pb-1">
+            {[
+              { id: 1, label: 'Artists', icon: '🎤' },
+              { id: 2, label: 'Trending', icon: '🔥' },
+              { id: 3, label: 'Playlists', icon: '📑' },
+            ].map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveIndex(tab.id)}
+                className={`btn btn-sm ${activeIndex === tab.id ? 'btn-primary' : 'btn-ghost'}`}
+              >
+                <span className="mr-1">{tab.icon}</span> {tab.label}
+              </button>
+            ))}
+          </div>
+        )}
         {/* Content Grid */}
         <div className="flex-1 p-4 max-w-[1600px] mx-auto w-full">
           {mounted ? renderContent() : (
@@ -132,6 +97,6 @@ export default function HomePage() {
           )}
         </div>
       </div>
-    </MainLayout>
+    </MainLayout >
   );
 }
