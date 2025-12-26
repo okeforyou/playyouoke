@@ -60,15 +60,17 @@ export default function ListSingerGrid({ showTab = true }) {
     // However, since we need to set state, we can use useEffect on data change.
   });
 
+  // When default Top Artists load (Only if no genre selected)
   useEffect(() => {
-    if (tempTopArtistsData) {
+    if (tempTopArtistsData && genreText === "เพลงไทย") {
       setTopArtistsData(tempTopArtistsData);
-      if (genreText !== "เพลงไทย") {
-        // refetch logic should probably be reactive instead of imperative
-        // But skipping for now to fix build first
+
+      // Auto-select first category if available
+      if (tempTopArtistsData.artistCategories?.[0]?.tag_id) {
+        setTagId(tempTopArtistsData.artistCategories[0].tag_id);
       }
     }
-  }, [tempTopArtistsData, genreText]);
+  }, [tempTopArtistsData]); // Removed genreText dependency to prevent loop/reset
 
 
   const { data: artists, isLoading } = useQuery({
@@ -76,32 +78,48 @@ export default function ListSingerGrid({ showTab = true }) {
     queryFn: () => getArtists(tagId),
     retry: false,
     refetchInterval: 0,
+    enabled: !!tagId, // Only fetch if tagId exists
   });
 
   const { isLoading: isLoadingGenre, data: playlistData, refetch } = useQuery<SearchPlaylists, Error>({
     queryKey: ["searchPlaylists", genreText],
     queryFn: () => searchPlaylists(genreText),
-    enabled: false,
+    enabled: genreText !== "เพลงไทย", // Only run if not default
   });
 
-  // Effect to handle side effects from data fetching
+  // When Genre Search Results load
   useEffect(() => {
-    if (playlistData && playlistData.artistCategories) {
+    if (playlistData && playlistData.artistCategories && playlistData.artistCategories.length > 0) {
       console.log("Updating Artist Categories with:", playlistData.artistCategories);
+
       setTopArtistsData(prev => ({
         ...prev,
         artistCategories: playlistData.artistCategories
       }));
+
+      // Auto Select First Playlist!
+      if (playlistData.artistCategories[0]?.tag_id) {
+        setTagId(playlistData.artistCategories[0].tag_id);
+      }
     }
   }, [playlistData]);
 
+  // Initial Load Placeholder
   useEffect(() => {
-    setTopArtistsData(tempTopArtistsData);
+    if (!topArtistsData.artistCategories.length && tempTopArtistsData) {
+      setTopArtistsData(tempTopArtistsData);
+    }
   }, []);
 
+  // Trigger search when genre text changes
   useEffect(() => {
-    refetch();
-  }, [genreText, refetch]);
+    if (genreText !== "เพลงไทย") {
+      refetch();
+    } else if (tempTopArtistsData) {
+      // Reset to default if back to Thai
+      setTopArtistsData(tempTopArtistsData);
+    }
+  }, [genreText, refetch, tempTopArtistsData]);
 
   const { setSearchTerm } = useKaraokeState();
   const { artist: topArtists } = !!topArtistsData

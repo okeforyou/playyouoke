@@ -89,7 +89,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                             (router.pathname === '/' && activeIndex === 1) ? "bg-primary text-white shadow-md shadow-primary/30" : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5"
                         )}>
                         <Home className="w-5 h-5" />
-                        <span>ศิลปิน (Artists)</span>
+                        <span>หน้าหลัก</span>
                     </Link>
 
                     <Link
@@ -100,7 +100,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                             (router.pathname === '/' && activeIndex === 2) ? "bg-primary text-white shadow-md shadow-primary/30" : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5"
                         )}>
                         <Flame className="w-5 h-5" />
-                        <span>มาแรง (Trending)</span>
+                        <span>มาแรง</span>
                     </Link>
 
                     <Link
@@ -111,7 +111,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                             (router.pathname === '/' && activeIndex === 3) ? "bg-primary text-white shadow-md shadow-primary/30" : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5"
                         )}>
                         <Library className="w-5 h-5" />
-                        <span>เพลย์ลิสต์ (Playlists)</span>
+                        <span>เพลย์ลิสต์</span>
                     </Link>
 
                     <div className="mt-6 px-3 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">ระบบ</div>
@@ -121,7 +121,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                         router.pathname === '/monitor' ? "bg-primary text-white shadow-md shadow-primary/30" : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5"
                     )}>
                         <Monitor className="w-5 h-5" />
-                        <span>จอภาพ (Monitor)</span>
+                        <span>2 หน้าจอ</span>
                     </Link>
 
                     <div className="mt-6 px-3 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">ช่วยเหลือ</div>
@@ -138,7 +138,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                                 router.pathname.startsWith('/admin') ? "text-red-600 bg-red-50" : "text-red-500 hover:bg-red-50"
                             )}>
                                 <Shield className="w-5 h-5" />
-                                <span>ระบบจัดการ</span>
+                                <span className="truncate">ระบบจัดการ</span>
                             </Link>
                         </div>
                     )}
