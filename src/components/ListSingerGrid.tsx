@@ -201,20 +201,20 @@ export default function ListSingerGrid({ showTab = true }) {
       </div>
 
       <div className="col-span-full px-2 pt-2 pb-2 text-lg font-bold text-gray-800 flex items-center gap-2">
-        แนวเพลง <span className="text-xs font-normal text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">เลือกได้เลย</span>
+        แนวเพลง <span className="text-xs font-medium text-gray-500 bg-gray-100 px-3 py-1 rounded-full border border-gray-200">เลือกที่คุณชอบ</span>
       </div>
 
-      {/* Genres: Grid Layout (Classic & Easy) */}
-      <div className="col-span-full grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-2 px-2 pb-4">
+      {/* Genres: Grid Layout (Clean & Luxury) */}
+      <div className="col-span-full grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-3 px-2 pb-6">
         {GENRES?.map((gen) => (
           <button
             key={gen}
             onClick={() => handleGenre(gen)}
             className={`
-                 w-full py-2 rounded-full text-sm font-medium transition-all border
+                 w-full py-2.5 rounded-full text-sm font-medium transition-all border
                  ${genreText == gen
-                ? "bg-primary text-white border-primary shadow-md transform scale-105"
-                : "bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50 hover:shadow-sm"
+                ? "bg-primary text-white border-primary shadow-lg shadow-primary/30 transform scale-105"
+                : "bg-white text-gray-600 border-gray-200 hover:border-primary hover:text-primary hover:bg-white hover:shadow-md"
               }
               `}
           >
@@ -224,7 +224,7 @@ export default function ListSingerGrid({ showTab = true }) {
         <Chip
           label={OKE_PLAYLIST}
           onClick={() => handleGenre(OKE_PLAYLIST)}
-          className={`cursor-pointer w-full py-2 rounded-full text-center text-sm font-medium border transition-all ${genreText === OKE_PLAYLIST ? "bg-primary text-white border-primary" : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"}`}
+          className={`cursor-pointer w-full py-2.5 rounded-full text-center text-sm font-medium border transition-all ${genreText === OKE_PLAYLIST ? "bg-primary text-white border-primary shadow-lg shadow-primary/30" : "bg-white text-gray-600 border-gray-200 hover:border-primary hover:text-primary hover:bg-white hover:shadow-md"}`}
         />
       </div>
 

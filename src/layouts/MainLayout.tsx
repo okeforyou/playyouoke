@@ -77,19 +77,20 @@ export default function MainLayout({ children }: MainLayoutProps) {
                 <nav className="flex-1 overflow-y-auto py-6 px-3 space-y-1">
                     <div className="px-3 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">เมนูหลัก</div>
 
-                    <Link href="/" className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-primary text-white shadow-md font-medium transition-all">
-                        <ListMusic className="w-5 h-5" />
-                        <span>แนะนำ</span>
+                    <Link href="/" className={clsx(
+                        "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all font-medium",
+                        router.pathname === '/' ? "bg-primary text-white shadow-md shadow-primary/30" : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5"
+                    )}>
+                        <Home className="w-5 h-5" />
+                        <span>หน้าหลัก</span>
                     </Link>
 
-                    <Link href="/monitor" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5 transition-all font-medium">
-                        <span className="text-lg">🏆</span>
-                        <span>มาแรง</span>
-                    </Link>
-
-                    <Link href="/monitor" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5 transition-all font-medium">
+                    <Link href="/monitor" className={clsx(
+                        "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all font-medium",
+                        router.pathname === '/monitor' ? "bg-primary text-white shadow-md shadow-primary/30" : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5"
+                    )}>
                         <span className="text-lg">📺</span>
-                        <span>Monitor</span>
+                        <span>จอภาพ (Monitor)</span>
                     </Link>
 
                     <div className="mt-6 px-3 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">ช่วยเหลือ</div>
@@ -101,7 +102,10 @@ export default function MainLayout({ children }: MainLayoutProps) {
                     {(user?.role === 'admin' || user?.email?.includes('admin')) && (
                         <div className="mt-4">
                             <div className="px-3 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Admin</div>
-                            <Link href="/admin" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-red-500 hover:bg-red-50 transition-all font-bold">
+                            <Link href="/admin" className={clsx(
+                                "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all font-bold",
+                                router.pathname.startsWith('/admin') ? "text-red-600 bg-red-50" : "text-red-500 hover:bg-red-50"
+                            )}>
                                 <span>🛡️</span>
                                 <span>ระบบจัดการ</span>
                             </Link>
@@ -157,42 +161,47 @@ export default function MainLayout({ children }: MainLayoutProps) {
                     </div>
                 </header>
 
-                {/* Desktop Header (Search Bar Area Only - Nav Moved to Sidebar) */}
+                {/* Desktop Header (Top Right Controls) */}
                 <header className="hidden lg:flex h-16 border-b border-border items-center px-6 justify-between bg-base shrink-0">
-                    {/* Search Bar Container - Let the Page handle the input, but we can put the "Global" top bar elements here if needed 
-                        OR we just leave this empty/minimal since Search is often in the Page content in the Screenshot.
-                        Actually, looking at 'index.tsx', the SearchBar is STICKY inside the Page. 
-                        So this header might be redundant or just for top-right controls (Cast/Remote).
-                    */}
-                    <div className="flex-1 max-w-2xl">
-                        {/* Optionally put global search here, but currently it's on the page. We leave blank spacing.*/}
-                    </div>
+                    {/* Empty Left Placeholder */}
+                    <div className="flex-1"></div>
 
-                    <div className="flex items-center gap-3">
-                        <CastButton />
+                    <div className="flex items-center gap-4">
+                        {/* Cast Button */}
+                        <div className="relative">
+                            <CastButton />
+                        </div>
+
+                        {/* Remote / QR Button */}
                         {allowRemote && (
-                            <button
-                                onClick={() => setShowQRCode(!showQRCode)}
-                                className={`btn btn-ghost btn-sm btn-square ${showQRCode ? 'text-primary' : 'text-gray-500'}`}
-                                title="Remote Control"
-                            >
-                                <span className="text-xl">📱</span>
-                            </button>
-                        )}
-                        {/* QR Popup */}
-                        {showQRCode && roomCode && (
-                            <div className="absolute top-14 right-4 p-4 bg-white shadow-xl rounded-xl border border-gray-200 z-50 w-64 text-center animate-in fade-in zoom-in-95 duration-200">
-                                <h3 className="font-bold text-gray-900 mb-2">Scan to Control</h3>
-                                <div className="bg-white p-2 rounded-lg border border-gray-100 inline-block mb-2">
-                                    <img
-                                        src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(
-                                            `${typeof window !== 'undefined' ? window.location.origin : ''}/remote?room=${roomCode}`
-                                        )}`}
-                                        alt="QR Code"
-                                        className="w-full h-auto"
-                                    />
-                                </div>
-                                <p className="text-xs text-gray-500">Control playback from phone</p>
+                            <div className="relative">
+                                <button
+                                    onClick={() => setShowQRCode(!showQRCode)}
+                                    className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all ${showQRCode
+                                            ? 'bg-primary text-white border-primary shadow-md'
+                                            : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+                                        }`}
+                                >
+                                    <span className="text-lg">📱</span>
+                                    <span className="text-sm font-medium">Remote</span>
+                                </button>
+
+                                {/* QR Popup */}
+                                {showQRCode && roomCode && (
+                                    <div className="absolute top-12 right-0 p-4 bg-white shadow-xl rounded-xl border border-gray-200 z-50 w-64 text-center animate-in fade-in zoom-in-95 duration-200 scale-100 origin-top-right">
+                                        <h3 className="font-bold text-gray-900 mb-2">Scan to Control</h3>
+                                        <div className="bg-white p-2 rounded-lg border border-gray-100 inline-block mb-2 shadow-inner">
+                                            <img
+                                                src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(
+                                                    `${typeof window !== 'undefined' ? window.location.origin : ''}/remote?room=${roomCode}`
+                                                )}`}
+                                                alt="QR Code"
+                                                className="w-full h-auto"
+                                            />
+                                        </div>
+                                        <p className="text-xs text-gray-500">Scan with your phone to add songs</p>
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>
