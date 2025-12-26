@@ -48,15 +48,39 @@ export default async function handler(
     // Use same playlist as trending hits for consistency
     const playlistId = "3oLUwlQTdzsCkTK72wCbv9"; // Thailand Top 50
 
-    console.log(`🎵 Fetching playlist: ${playlistId}`);
-    const playlistResponse = await axios.get(
-      `https://api.spotify.com/v1/playlists/${playlistId}/tracks`,
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      }
-    );
+    // Additional Categories (Mock Genres using Playlists)
+    const featuredPlaylists = [
+      { id: "37i9dQZF1DX2L0iB23Enbq", name: "ลูกทุ่ง 100 ล้านวิว" },
+      { id: "37i9dQZF1DXa2SPUyWl8Y5", name: "GMM Grammy" },
+      { id: "37i9dQZF1DX3XlBkCi835s", name: "T-Pop" },
+      { id: "37i9dQZF1DWZtZ8vUCzXqi", name: "เพลงฮิตยุค 2000" },
+      { id: "37i9dQZF1DX0t34Gq8hZba", name: "เพลงใหม่ล่าสุด" }
+    ];
+
+    console.log(`🎵 Fetching playlist: ${playlistId} and categories`);
+
+    // Fetch Main Playlist and Featured Categories in Parallel
+    const [playlistResponse, ...categoryResponses] = await Promise.all([
+      axios.get(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, { headers: { Authorization: `Bearer ${accessToken}` } }),
+      ...featuredPlaylists.map(cat =>
+        axios.get(`https://api.spotify.com/v1/playlists/${cat.id}?fields=id,name,images`, {
+          headers: { Authorization: `Bearer ${accessToken}` }
+        }).catch(err => {
+          console.error(`Failed to fetch category ${cat.id}:`, err.message);
+          return { data: null };
+        })
+      )
+    ]);
+
+    // Populate Categories
+    artistCategories = categoryResponses
+      .map(res => res.data)
+      .filter(data => data && data.id)
+      .map(data => ({
+        tag_id: data.id,
+        tag_name: data.name,
+        imageUrl: data.images?.[0]?.url || ""
+      }));
 
     const tracks = playlistResponse.data.items;
     console.log(`📊 Got ${tracks.length} tracks from Thailand Top 50 playlist`);
