@@ -68,24 +68,7 @@ export default function HomePage() {
   return (
     <MainLayout>
       <div className="flex flex-col min-h-full">
-        {/* Navigation Tabs (Classic) */}
-        {mounted && !searchTerm && (
-          <div className="flex justify-center gap-2 mt-4 overflow-x-auto pb-1">
-            {[
-              { id: 1, label: 'Artists', icon: '🎤' },
-              { id: 2, label: 'Trending', icon: '🔥' },
-              { id: 3, label: 'Playlists', icon: '📑' },
-            ].map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveIndex(tab.id)}
-                className={`btn btn-sm ${activeIndex === tab.id ? 'btn-primary' : 'btn-ghost'}`}
-              >
-                <span className="mr-1">{tab.icon}</span> {tab.label}
-              </button>
-            ))}
-          </div>
-        )}
+
         {/* Content Grid */}
         <div className="flex-1 p-4 max-w-[1600px] mx-auto w-full">
           {mounted ? renderContent() : (

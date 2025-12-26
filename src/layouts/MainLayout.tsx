@@ -1,6 +1,6 @@
 import React, { ReactNode, useState, useEffect } from 'react';
 import clsx from 'clsx';
-import { Menu, Search, ListMusic, Home, X, Monitor, MessageCircle, Shield, Key, Smartphone } from 'lucide-react';
+import { Menu, Search, ListMusic, Home, X, Monitor, MessageCircle, Shield, Key, Smartphone, Flame, Library } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { DebounceInput } from 'react-debounce-input';
@@ -21,7 +21,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
     const router = useRouter();
     const [isQueueOpen, setQueueOpen] = useState(false); // Mobile Queue Drawer
     const [isMobilePlayerExpanded, setMobilePlayerExpanded] = useState(false); // Mobile Global Player Expansion
-    const { searchTerm, setSearchTerm } = useKaraokeState();
+    const { searchTerm, setSearchTerm, activeIndex, setActiveIndex } = useKaraokeState();
 
     // Auth & Config
     const { user } = useAuthStore();
@@ -52,11 +52,10 @@ export default function MainLayout({ children }: MainLayoutProps) {
         };
     }, []);
 
-    // Prevent hydration mismatch by not rendering auth-dependent UI on server
-    // Or we can just let the structural shell render and only hide the user/button part.
-    // But for simplicity, let's keep it safe. 
-    // Actually, returning null for the whole layout might cause flash.
-    // Better to just use 'mounted' flag in the JSX for specific parts.
+    // Helper to handle navigation state
+    const handleNav = (index: number) => {
+        setActiveIndex(index);
+    };
 
     return (
         <div className="flex h-screen w-full bg-base text-text-base overflow-hidden">
@@ -82,13 +81,40 @@ export default function MainLayout({ children }: MainLayoutProps) {
                 <nav className="flex-1 overflow-y-auto py-6 px-3 space-y-1">
                     <div className="px-3 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">เมนูหลัก</div>
 
-                    <Link href="/" className={clsx(
-                        "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all font-medium",
-                        router.pathname === '/' ? "bg-primary text-white shadow-md shadow-primary/30" : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5"
-                    )}>
+                    <Link
+                        href="/"
+                        onClick={() => handleNav(1)}
+                        className={clsx(
+                            "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all font-medium",
+                            (router.pathname === '/' && activeIndex === 1) ? "bg-primary text-white shadow-md shadow-primary/30" : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5"
+                        )}>
                         <Home className="w-5 h-5" />
-                        <span>หน้าหลัก</span>
+                        <span>ศิลปิน (Artists)</span>
                     </Link>
+
+                    <Link
+                        href="/"
+                        onClick={() => handleNav(2)}
+                        className={clsx(
+                            "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all font-medium",
+                            (router.pathname === '/' && activeIndex === 2) ? "bg-primary text-white shadow-md shadow-primary/30" : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5"
+                        )}>
+                        <Flame className="w-5 h-5" />
+                        <span>มาแรง (Trending)</span>
+                    </Link>
+
+                    <Link
+                        href="/"
+                        onClick={() => handleNav(3)}
+                        className={clsx(
+                            "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all font-medium",
+                            (router.pathname === '/' && activeIndex === 3) ? "bg-primary text-white shadow-md shadow-primary/30" : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5"
+                        )}>
+                        <Library className="w-5 h-5" />
+                        <span>เพลย์ลิสต์ (Playlists)</span>
+                    </Link>
+
+                    <div className="mt-6 px-3 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">ระบบ</div>
 
                     <Link href="/monitor" className={clsx(
                         "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all font-medium",
