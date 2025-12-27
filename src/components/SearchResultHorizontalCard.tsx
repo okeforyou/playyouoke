@@ -1,5 +1,6 @@
+import Link from "next/link";
 import Image from "next/image";
-import { PlayIcon } from "@heroicons/react/24/solid";
+import { Play } from "lucide-react";
 import { SearchResult, RecommendedVideo } from "../types/invidious";
 
 interface SearchResultHorizontalCardProps {
@@ -37,7 +38,7 @@ export default function SearchResultHorizontalCard({
           />
           {/* Play Icon Overlay */}
           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
-            <PlayIcon className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+            <Play className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" fill="currentColor" />
           </div>
         </figure>
 

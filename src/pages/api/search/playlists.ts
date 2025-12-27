@@ -15,14 +15,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         let results: any[] = [];
         try {
             const spotifyResults = await searchSpotifyPlaylists(q as string, 10);
-            if (spotifyResults && spotifyResults.length > 0) {
-                results = spotifyResults.map((item: any) => ({
-                    playlistId: `sp-${item.id}`,
-                    title: item.name,
-                    thumbnail: item.images?.[0]?.url || "",
-                    author: item.owner?.display_name || "Spotify",
-                    videoCount: item.tracks?.total?.toString() || "playlist"
-                }));
+            if (spotifyResults && Array.isArray(spotifyResults) && spotifyResults.length > 0) {
+                results = spotifyResults
+                    .filter((item: any) => item && item.id)
+                    .map((item: any) => ({
+                        playlistId: `sp-${item.id}`,
+                        title: item.name,
+                        thumbnail: item.images?.[0]?.url || "",
+                        author: item.owner?.display_name || "Spotify",
+                        videoCount: item.tracks?.total?.toString() || "playlist"
+                    }));
             }
         } catch (e) {
             console.warn("[API] Spotify Search failed, trying fallback...", e);

@@ -24,7 +24,7 @@ module.exports = {
         bodydark: '#AEB7C0',
         bodydark1: '#DEE4EE',
         bodydark2: '#8A99AF',
-        primary: '#3C50E0',
+
         secondary: '#80CAEE',
         stroke: '#E2E8F0',
         'adm-gray': '#EFF4FB',
@@ -89,7 +89,7 @@ module.exports = {
       {
         light: {
           ...require("daisyui/src/colors/themes")["[data-theme=light]"],
-          primary: "#ef4444",
+          primary: "#E50914",
           secondary: "#6b7280",
           "--rounded-box": "0.2rem",
           "--rounded-btn": "0.2rem",

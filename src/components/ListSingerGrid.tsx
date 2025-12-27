@@ -63,14 +63,13 @@ export default function ListSingerGrid({ showTab = true }) {
   // When default Top Artists load (Only if no genre selected)
   useEffect(() => {
     if (tempTopArtistsData && genreText === "เพลงไทย") {
+      // Logic to prevent unnecessary re-sets could be added, but simple set is fine for now
       setTopArtistsData(tempTopArtistsData);
 
-      // Auto-select first category if available
-      if (tempTopArtistsData.artistCategories?.[0]?.tag_id) {
-        setTagId(tempTopArtistsData.artistCategories[0].tag_id);
-      }
+      // Auto-select first category if available and no tag selected (optional, user said no auto-select earlier but checking logic)
+      // Removed auto-select tagId logic to prevent overriding user choice or causing jumps
     }
-  }, [tempTopArtistsData]); // Removed genreText dependency to prevent loop/reset
+  }, [tempTopArtistsData, genreText]);
 
 
   const { data: artists, isLoading } = useQuery({
@@ -84,12 +83,12 @@ export default function ListSingerGrid({ showTab = true }) {
   const { isLoading: isLoadingGenre, data: playlistData, refetch } = useQuery<SearchPlaylists, Error>({
     queryKey: ["searchPlaylists", genreText],
     queryFn: () => searchPlaylists(genreText),
-    enabled: genreText !== "เพลงไทย", // Only run if not default
+    // enabled: true, // Always run now
   });
 
   // When Genre Search Results load
   useEffect(() => {
-    if (playlistData && playlistData.artistCategories && playlistData.artistCategories.length > 0) {
+    if (playlistData && playlistData.artistCategories) {
       console.log("Updating Artist Categories with:", playlistData.artistCategories);
 
       setTopArtistsData(prev => ({
@@ -97,10 +96,17 @@ export default function ListSingerGrid({ showTab = true }) {
         artistCategories: playlistData.artistCategories
       }));
 
-      // Auto Select First Playlist!
-      if (playlistData.artistCategories[0]?.tag_id) {
-        setTagId(playlistData.artistCategories[0].tag_id);
-      }
+      // Auto Select First Playlist removed to allow user to choose
+      // if (playlistData.artistCategories[0]?.tag_id) {
+      //   setTagId(playlistData.artistCategories[0].tag_id);
+      // } else {
+      //   // If empty, maybe clear tagId or set to null?
+      //   // setTagId("");
+      // }
+
+      // Clear tagId when genre changes effectively (but maybe keep it if it matches? No, unsafe)
+      // Actually, if we switch genre, we should sort of reset selection.
+      setTagId("");
     }
   }, [playlistData]);
 
@@ -141,7 +147,7 @@ export default function ListSingerGrid({ showTab = true }) {
   ) : (
     <>
       <div className="col-span-full bg-transparent pt-2">
-        {showTab && (
+        {showTab && genreText === "เพลงไทย" && (
           <nav className="flex justify-center gap-4 bg-transparent mb-4">
             <button
               type="button"
@@ -166,57 +172,59 @@ export default function ListSingerGrid({ showTab = true }) {
         )}
       </div>
 
-      {/* Artist Grid */}
-      <div className={`relative grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 xl:grid-cols-8 gap-3 col-span-full pb-6 px-2`}>
-        {isLoadTopArtists && (
-          <>
-            {getSkeletonItems(16).map((s, i) => (
-              <div
-                key={s + i}
-                className="card bg-gray-200 animate-pulse w-full aspect-square rounded-2xl"
-              ></div>
-            ))}
-          </>
-        )}
-        {topArtists?.map((artist, i) => {
-          return (
-            <Fragment key={artist.name + i}>
-              <div
-                className="group relative flex flex-col items-center cursor-pointer transition-transform hover:-translate-y-1"
-                onClick={() => {
-                  setSearchTerm(artist.name);
-                }}
-              >
-                <div className="relative w-full aspect-square mb-2 overflow-hidden rounded-full shadow-sm group-hover:shadow-md border border-gray-100/50">
-                  <Image
-                    unoptimized
-                    src={artist.imageUrl}
-                    priority
-                    alt={artist.name}
-                    layout="fill"
-                    className="object-cover transition-transform duration-500 group-hover:scale-110"
-                    onLoad={(ev) =>
-                      ev.currentTarget.classList.remove("animate-pulse")
-                    }
-                    onErrorCapture={(ev) => {
-                      ev.currentTarget.src = "/assets/avatar.jpeg";
-                    }}
-                  />
-                  {/* Play Overlay Hints */}
-                  <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
-                    <div className="bg-white/90 p-2 rounded-full shadow-sm backdrop-blur-sm">
-                      <svg className="w-6 h-6 text-primary ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+      {/* Artist Grid - Show only when Default Genre (Thai) */}
+      {genreText === "เพลงไทย" && (
+        <div className={`relative grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 xl:grid-cols-8 gap-3 col-span-full pb-6 px-2`}>
+          {isLoadTopArtists && (
+            <>
+              {getSkeletonItems(16).map((s, i) => (
+                <div
+                  key={s + i}
+                  className="card bg-gray-200 animate-pulse w-full aspect-square rounded-2xl"
+                ></div>
+              ))}
+            </>
+          )}
+          {topArtists?.map((artist, i) => {
+            return (
+              <Fragment key={artist.name + i}>
+                <div
+                  className="group relative flex flex-col items-center cursor-pointer transition-transform hover:-translate-y-1"
+                  onClick={() => {
+                    setSearchTerm(artist.name);
+                  }}
+                >
+                  <div className="relative w-full aspect-square mb-2 overflow-hidden rounded-2xl shadow-sm group-hover:shadow-md border border-gray-100/50">
+                    <Image
+                      unoptimized
+                      src={artist.imageUrl}
+                      priority
+                      alt={artist.name}
+                      layout="fill"
+                      className="object-cover transition-transform duration-500 group-hover:scale-110"
+                      onLoad={(ev) =>
+                        ev.currentTarget.classList.remove("animate-pulse")
+                      }
+                      onErrorCapture={(ev) => {
+                        ev.currentTarget.src = "/assets/avatar.jpeg";
+                      }}
+                    />
+                    {/* Play Overlay Hints */}
+                    <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                      <div className="bg-white/90 p-2 rounded-full shadow-sm backdrop-blur-sm">
+                        <svg className="w-6 h-6 text-primary ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                      </div>
                     </div>
                   </div>
+                  <h2 className="text-xs sm:text-sm font-medium text-gray-800 text-center line-clamp-1 group-hover:text-primary transition-colors">
+                    {artist.name}
+                  </h2>
                 </div>
-                <h2 className="text-xs sm:text-sm font-medium text-gray-800 text-center line-clamp-1 group-hover:text-primary transition-colors">
-                  {artist.name}
-                </h2>
-              </div>
-            </Fragment>
-          );
-        })}
-      </div>
+              </Fragment>
+            );
+          })}
+        </div>
+      )}
 
       <div className="col-span-full px-2 pt-2 pb-2 text-lg font-bold text-gray-800 flex items-center gap-2">
         แนวเพลง <span className="text-xs font-medium text-gray-500 bg-gray-100 px-3 py-1 rounded-full border border-gray-200">เลือกที่คุณชอบ</span>
@@ -247,34 +255,42 @@ export default function ListSingerGrid({ showTab = true }) {
       </div>
 
       <div ref={playlistRef} className="col-span-full px-2 pt-4 pb-2 text-lg font-bold text-gray-800">
-        เพลย์ลิสต์แนะนำ
+        {genreText === "เพลงไทย" ? "เพลย์ลิสต์แนะนำ" : `เพลย์ลิสต์ ${genreText}`}
       </div>
 
-      {/* Category/Mood Tags: Horizontal Scroll */}
+      {/* Category/Mood Tags: Unified Grid for ALL Genres */}
       {!isLoadTopArtists && (
-        <div className="col-span-full flex overflow-x-auto gap-3 px-2 pb-6 scrollbar-hide">
-          {topArtistsData?.artistCategories.map((cat) => (
-            <div
-              key={cat.tag_id}
-              onClick={() => {
-                setTagId(cat.tag_id);
-                handleSongScroll();
-              }}
-              className={`
-                   relative flex-shrink-0 w-32 h-20 rounded-xl overflow-hidden cursor-pointer shadow-sm hover:shadow-md transition-all hover:scale-105 group
-                   ${tagId == cat.tag_id ? "ring-2 ring-offset-1 ring-primary" : ""}
-                `}
-            >
+        <div className="col-span-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6 px-4 pb-8">
+          {topArtistsData?.artistCategories.length > 0 ? (
+            topArtistsData.artistCategories.map((cat) => (
               <div
-                className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110"
-                style={{ backgroundImage: `url('${cat.imageUrl}')` }}
-              />
-              <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition-colors" />
-              <div className="absolute inset-0 flex items-center justify-center p-2">
-                <span className="text-white font-bold text-sm text-center drop-shadow-md">{cat.tag_name}</span>
+                key={cat.tag_id}
+                onClick={() => {
+                  setTagId(cat.tag_id);
+                  handleSongScroll();
+                }}
+                className={`
+                   relative flex-shrink-0 w-full aspect-video rounded-2xl overflow-hidden cursor-pointer shadow-md hover:shadow-xl transition-all hover:scale-[1.02] group
+                   ${tagId == cat.tag_id ? "ring-4 ring-offset-2 ring-primary" : ""}
+                `}
+              >
+                <div
+                  className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-110"
+                  style={{ backgroundImage: `url('${cat.imageUrl}')` }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent group-hover:via-black/40 transition-colors" />
+                <div className="absolute inset-x-0 bottom-0 p-4 flex flex-col justify-end">
+                  <span className="text-white font-semibold text-xs drop-shadow-sm line-clamp-2 leading-relaxed tracking-wide transform translate-y-0 group-hover:-translate-y-1 transition-transform">
+                    {cat.tag_name}
+                  </span>
+                </div>
               </div>
+            ))
+          ) : (
+            <div className="col-span-full flex flex-col items-center justify-center py-10 text-gray-400">
+              <p>ไม่พบเพลย์ลิสต์สำหรับ {genreText}</p>
             </div>
-          ))}
+          )}
         </div>
       )}
 
