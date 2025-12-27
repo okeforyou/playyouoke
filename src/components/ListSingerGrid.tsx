@@ -146,88 +146,65 @@ export default function ListSingerGrid({ showTab = true }) {
     <JooxError />
   ) : (
     <>
-      <div className="col-span-full bg-transparent pt-2">
-        {showTab && genreText === "เพลงไทย" && (
-          <nav className="flex justify-center gap-4 bg-transparent mb-4">
-            <button
-              type="button"
-              className={`px-6 py-2 rounded-full text-base font-medium transition-all ${
-                // Use Active Index logic from parent if passed, or just hardcode visual state for now since logic is mixed
-                // The original code used daisyUI tabs class. We replace with cleaner buttons.
-                "bg-primary text-white shadow-md hover:bg-primary-focus"
-                }`}
-            >
-              ศิลปินยอดฮิต
-            </button>
-            <button
-              type="button"
-              className="px-6 py-2 rounded-full text-base font-medium text-gray-600 hover:bg-gray-100 transition-all"
-              onClick={() => {
-                setActiveIndex(2);
-              }}
-            >
-              มาแรง
-            </button>
-          </nav>
-        )}
+      <div className="col-span-full px-2 pt-2 pb-2 text-lg font-bold text-gray-800 flex items-center gap-2">
+        ศิลปินยอดนิยม
       </div>
 
-      {/* Artist Grid - Show only when Default Genre (Thai) */}
-      {genreText === "เพลงไทย" && (
-        <div className={`relative grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 xl:grid-cols-8 gap-3 col-span-full pb-6 px-2`}>
-          {isLoadTopArtists && (
-            <>
-              {getSkeletonItems(16).map((s, i) => (
-                <div
-                  key={s + i}
-                  className="card bg-gray-200 animate-pulse w-full aspect-square rounded-2xl"
-                ></div>
-              ))}
-            </>
-          )}
-          {topArtists?.map((artist, i) => {
-            return (
-              <Fragment key={artist.name + i}>
-                <div
-                  className="group relative flex flex-col items-center cursor-pointer transition-transform hover:-translate-y-1"
-                  onClick={() => {
-                    setSearchTerm(artist.name);
-                  }}
-                >
-                  <div className="relative w-full aspect-square mb-2 overflow-hidden rounded-2xl shadow-sm group-hover:shadow-md border border-gray-100/50">
-                    <Image
-                      unoptimized
-                      src={artist.imageUrl}
-                      priority
-                      alt={artist.name}
-                      layout="fill"
-                      className="object-cover transition-transform duration-500 group-hover:scale-110"
-                      onLoad={(ev) =>
-                        ev.currentTarget.classList.remove("animate-pulse")
-                      }
-                      onErrorCapture={(ev) => {
-                        ev.currentTarget.src = "/assets/avatar.jpeg";
-                      }}
-                    />
-                    {/* Play Overlay Hints */}
-                    <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
-                      <div className="bg-white/90 p-2 rounded-full shadow-sm backdrop-blur-sm">
-                        <svg className="w-6 h-6 text-primary ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
-                      </div>
+      {/* Artist Grid - Show Always */}
+      <div className={`relative grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 xl:grid-cols-8 gap-3 col-span-full pb-6 px-2`}>
+        {isLoadTopArtists && (
+          <>
+            {getSkeletonItems(16).map((s, i) => (
+              <div
+                key={s + i}
+                className="card bg-gray-200 animate-pulse w-full aspect-square rounded-2xl"
+              ></div>
+            ))}
+          </>
+        )}
+        {topArtists?.map((artist, i) => {
+          return (
+            <Fragment key={artist.name + i}>
+              <div
+                className="group relative flex flex-col items-center cursor-pointer transition-transform hover:-translate-y-1"
+                onClick={() => {
+                  setSearchTerm(artist.name);
+                }}
+              >
+                <div className="relative w-full aspect-square mb-2 overflow-hidden rounded-2xl shadow-sm group-hover:shadow-md border border-gray-100/50">
+                  <Image
+                    unoptimized
+                    src={artist.imageUrl}
+                    priority
+                    alt={artist.name}
+                    layout="fill"
+                    className="object-cover transition-transform duration-500 group-hover:scale-110"
+                    onLoad={(ev) =>
+                      ev.currentTarget.classList.remove("animate-pulse")
+                    }
+                    onErrorCapture={(ev) => {
+                      ev.currentTarget.src = "/assets/avatar.jpeg";
+                    }}
+                  />
+                  {/* Play Overlay Hints */}
+                  <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                    <div className="bg-white/90 p-2 rounded-full shadow-sm backdrop-blur-sm">
+                      <svg className="w-6 h-6 text-primary ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
                     </div>
                   </div>
-                  <h2 className="text-xs sm:text-sm font-medium text-gray-800 text-center line-clamp-1 group-hover:text-primary transition-colors">
-                    {artist.name}
-                  </h2>
                 </div>
-              </Fragment>
-            );
-          })}
-        </div>
-      )}
+                <h2 className="text-xs sm:text-sm font-medium text-gray-800 text-center line-clamp-1 group-hover:text-primary transition-colors">
+                  {artist.name}
+                </h2>
+              </div>
+            </Fragment>
+          );
+        })}
+      </div>
+
 
       <div className="col-span-full px-2 pt-2 pb-2 text-lg font-bold text-gray-800 flex items-center gap-2">
-        แนวเพลง <span className="text-xs font-medium text-gray-500 bg-gray-100 px-3 py-1 rounded-full border border-gray-200">เลือกที่คุณชอบ</span>
+        แนวเพลง
       </div>
 
       {/* Genres: Grid Layout (Clean & Luxury) */}
@@ -237,10 +214,10 @@ export default function ListSingerGrid({ showTab = true }) {
             key={gen}
             onClick={() => handleGenre(gen)}
             className={`
-                 w-full py-2.5 rounded-full text-sm font-medium transition-all border
+                 w-full py-2.5 rounded-full text-sm font-medium transition-all border border-transparent
                  ${genreText == gen
-                ? "bg-primary text-white border-primary shadow-lg shadow-primary/30 transform scale-105"
-                : "bg-white text-gray-600 border-gray-200 hover:border-primary hover:text-primary hover:bg-white hover:shadow-md"
+                ? "bg-primary text-white shadow-lg shadow-primary/30 transform scale-105"
+                : "bg-gray-500 text-white hover:bg-gray-600 hover:scale-105 shadow-sm"
               }
               `}
           >
